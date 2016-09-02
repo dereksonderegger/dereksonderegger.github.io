@@ -38,8 +38,8 @@ MathJax.Hub.Config({
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-
-<link rel="next" href="2-vectors.html">
+<link rel="prev" href="6-matrices-data-frames-and-lists.html">
+<link rel="next" href="8-data-manipulation.html">
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -232,156 +232,168 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="header">
-<h1 class="title">A Sufficient Introduction to R</h1>
-<h4 class="author"><em>Derek L. Sonderegger</em></h4>
-<h4 class="date"><em>2016-09-01</em></h4>
-</div>
-<div id="introduction" class="section level1">
-<h1><span class="header-section-number">Chapter 1</span> Introduction</h1>
-<p>R is a open-source program that is commonly used in Statistics. It runs on almost every platform and is completely free and is available at <a href="www.r-project.org" class="uri">www.r-project.org</a>. Most of the cutting-edge statistical research is first available on R.</p>
-<p>R is a script based language, so there is no point and click interface. (Actually there are packages that attempt to provide a point and click interface, but they are still somewhat primitive.) While the initial learning curve will be steeper, understanding how to write scripts will be valuable because it leaves a clear description of what steps you performed in your data analysis. Typically you will want to write a script in a separate file and then run individual lines. The saves you from having to retype a bunch of commands and speeds up the debugging process.</p>
-<p>This document is a very brief introduction to using R in my course. I highly recommend downloading and reading/skimming the manual “An Introduction to R” which is located at <a href="http://cran.r-project.org/doc/manuals/R-intro.pdf">cran.r-project.org/doc/manuals/R-intro.pdf</a>.</p>
-<p>Finding help about a certain function is very easy. At the prompt, just type <code>help(function.name)</code> or <code>?function.name</code>. If you don’t know the name of the function, your best bet is to go the the web page www.rseek.org which will search various R resources for your keyword(s). Another great resource is the coding question and answer site <a href="http://stackoverflow.com">stackoverflow</a>.</p>
-<p>The basic editor that comes with R works fairly well, but you should consider running R through the program RStudio which is located at <a href="http://www.rstudio.org">rstudio.com</a>. This is a completely free Integrated Developement Environment that works on Macs, Windows and a couple of flavors of Linux. It simplifies a bunch of more annoying aspects of the standard R GUI and supports things like tab completion.</p>
-<p>When you first open up R (or RStudio) the console window gives you some information about the version of R you are running and then it gives the prompt <code>&gt;</code>. This prompt is waiting for you to input a command. The prompt + tells you that the current command is spanning multiple lines. In a script file you might have typed something like this:</p>
-<pre><code>for( i in 1:5 ){
-    print(i)
-}</code></pre>
-<p>But when you copy and paste it into the console in R you’ll see something like this:</p>
-<pre><code>&gt; for (i in 1:5){
-+    print(i)  
-+ }</code></pre>
-<p>If you type your commands into a file, you won’t type the <code>&gt;</code> or <code>+</code> prompts. For the rest of the tutorial, I will show the code as you would type it into a script and I will show the output being shown with two hashtags (<code>##</code>) before it to designate that it is output.</p>
-<div id="r-as-a-simple-calculator" class="section level2">
-<h2><span class="header-section-number">1.1</span> R as a simple calculator</h2>
-<p>Assuming that you have started R on whatever platform you like, you can use R as a simple calculator. At the prompt, type 2+3 and hit enter. What you should see is the following</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Some simple addition</span>
-<span class="dv">2+3</span></code></pre></div>
-<pre><code>## [1] 5</code></pre>
-<p>In this fashion you can use R as a very capable calculator.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="dv">6</span>*<span class="dv">8</span></code></pre></div>
-<pre><code>## [1] 48</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="dv">4</span>^<span class="dv">3</span></code></pre></div>
-<pre><code>## [1] 64</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">exp</span>(<span class="dv">1</span>)   <span class="co"># exp() is the exponential function</span></code></pre></div>
-<pre><code>## [1] 2.718282</code></pre>
-<p>R has most constants and common mathematical functions you could ever want. <code>sin()</code>, <code>cos()</code>, and other trigonometry functions are available, as are the exponential and log functions <code>exp()</code>, <code>log()</code>. The absolute value is given by <code>abs()</code>, and <code>round()</code> will round a value to the nearest integer.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pi     <span class="co"># the constant 3.14159265...</span></code></pre></div>
-<pre><code>## [1] 3.141593</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sin</span>(<span class="dv">0</span>)</code></pre></div>
-<pre><code>## [1] 0</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">log</span>(<span class="dv">5</span>) <span class="co"># unless you specify the base, R will assume base e</span></code></pre></div>
-<pre><code>## [1] 1.609438</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">log</span>(<span class="dv">5</span>, <span class="dt">base=</span><span class="dv">10</span>)  <span class="co"># base 10</span></code></pre></div>
-<pre><code>## [1] 0.69897</code></pre>
-<p>Whenever I call a function, there will be some arguments that are mandatory, and some that are optional and the arguments are separated by a comma. In the above statements the function <code>log()</code> requires at least one argument, and that is the number(s) to take the log of. However, the base argument is optional. If you do not specify what base to use, R will use a default value. You can see that R will default to using base <span class="math inline">\(e\)</span> by looking at the help page (by typing <code>help(log)</code> or <code>?log</code> at the command prompt).</p>
-<p>Arguments can be specified via the order in which they are passed or by naming the arguments. So for the <code>log()</code> function which has arguments <code>log(x, base=exp(1))</code>. If I specify which arguments are which using the named values, then order doesn’t matter.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Demonstrating order does not matter if you specify</span>
-<span class="co"># which argument is which</span>
-<span class="kw">log</span>(<span class="dt">x=</span><span class="dv">5</span>, <span class="dt">base=</span><span class="dv">10</span>)   </code></pre></div>
-<pre><code>## [1] 0.69897</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">log</span>(<span class="dt">base=</span><span class="dv">10</span>, <span class="dt">x=</span><span class="dv">5</span>)</code></pre></div>
-<pre><code>## [1] 0.69897</code></pre>
-<p>But if we don’t specify which argument is which, R will decide that <code>x</code> is the first argument, and <code>base</code> is the second.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># If not specified, R will assume the second value is the base...</span>
-<span class="kw">log</span>(<span class="dv">5</span>, <span class="dv">10</span>)</code></pre></div>
-<pre><code>## [1] 0.69897</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">log</span>(<span class="dv">10</span>, <span class="dv">5</span>)</code></pre></div>
-<pre><code>## [1] 1.430677</code></pre>
-<p>When I specify the arguments, I have been using the <code>name=value</code> notation and a student might be tempted to use the <code>&lt;-</code> notation hereSee next section.. Don’t do that as the <code>name=value</code> notation is making an association mapping and not a permanent assignment.</p>
-</div>
-<div id="assignment" class="section level2">
-<h2><span class="header-section-number">1.2</span> Assignment</h2>
-<p>We need to be able to assign a value to a variable to be able to use it later. R does this by using an arrow <code>&lt;-</code> or an equal sign <code>=</code>. While R supports either, for readability, I suggest people pick one assignment operator and stick with it. I personally prefer to use the arrow. Variable names cannot start with a number, may not include spaces, and are case sensitive.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tau &lt;-<span class="st"> </span><span class="dv">2</span>*pi       <span class="co"># create two variables</span>
-my.test.var =<span class="st"> </span><span class="dv">5</span>   <span class="co"># notice they show up in &#39;Environment&#39; tab in RStudio!</span>
-tau</code></pre></div>
-<pre><code>## [1] 6.283185</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">my.test.var</code></pre></div>
-<pre><code>## [1] 5</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">tau *<span class="st"> </span>my.test.var</code></pre></div>
-<pre><code>## [1] 31.41593</code></pre>
-<p>As your analysis gets more complicated, you’ll want to save the results to a variable so that you can access the results later<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>. <em>If you don’t assign the result to a variable, you have no way of accessing the result.</em><a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a></p>
-</div>
-<div id="scripts-and-rmarkdown" class="section level2">
-<h2><span class="header-section-number">1.3</span> Scripts and RMarkdown</h2>
-<p>One of the worst things about a pocket calculator is there is no good way to go several steps and easily see what you did or fix a mistake (there is nothing more annoying than re-typing something because of a typo. To avoid these issues I always work with script (or RMarkdown) files instead of typing directly into the console. You will quickly learn that it is impossible to write R code correctly the first time and you’ll save yourself a huge amount of work by just embracing scripts (and RMarkdown) from the beginning. Furthermore, having a script file fully documents how you did your analysis, which can help when writing the methods section of a paper. Finally, having a script makes it easy to re-run an analysis after a change in the data (additional data values, transformed data, or removal of outliers).</p>
-<p>It often makes your script more readable if you break a single command up into multiple lines. R will disregard all whitespace (including line breaks) so you can safely spread your command over as multiple lines. Finally, it is useful to leave comments in the script for things such as explaining a tricky step, who wrote the code and when, or why you chose a particular name for a variable. The <code>#</code> sign will denote that the rest of the line is a comment and R will ignore it.</p>
-<div id="r-scripts-.r-files" class="section level3">
-<h3><span class="header-section-number">1.3.1</span> R Scripts (.R files)</h3>
-<p>The first type of file that we’ll discuss is a traditional script file. To create a new .R script in RStudio go to <code>File -&gt; New File -&gt; R Script</code>. This opens a new window in RStudio where you can type commands and functions as a common text editor. Type whatever you like in the script window and then you can execute the code line by line (using the run button or its keyboard shortcut to run the highlighted region or whatever line the curser is on) or the entire script (using the source button). Other options for what piece of code to run are available under the Code dropdown box.</p>
-<p>An R script for a homework assignment might look something like this:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Problem 1 </span>
-<span class="co"># Calculate the log of a couple of values and make a plot</span>
-<span class="co"># of the log function from 0 to 3</span>
-<span class="kw">log</span>(<span class="dv">0</span>)
-<span class="kw">log</span>(<span class="dv">1</span>)
-<span class="kw">log</span>(<span class="dv">2</span>)
-x &lt;-<span class="st"> </span><span class="kw">seq</span>(.<span class="dv">1</span>,<span class="dv">3</span>, <span class="dt">length=</span><span class="dv">1000</span>)
-<span class="kw">plot</span>(x, <span class="kw">log</span>(x))
-
-<span class="co"># Problem 2</span>
-<span class="co"># Calculate the exponential function of a couple of values</span>
-<span class="co"># and make a plot of the function from -2 to 2</span>
-<span class="kw">exp</span>(-<span class="dv">2</span>)
-<span class="kw">exp</span>(<span class="dv">0</span>)
-<span class="kw">exp</span>(<span class="dv">2</span>)
-x &lt;-<span class="st"> </span><span class="kw">seq</span>(-<span class="dv">2</span>, <span class="dv">2</span>, <span class="dt">length=</span><span class="dv">1000</span>)
-<span class="kw">plot</span>(x, <span class="kw">exp</span>(x))</code></pre></div>
-<p>This looks perfectly acceptable as a way of documenting what you did, but this script file doesn’t contain the actual results of commands I ran, nor does it show you the plots. Also anytime I want to comment on some output, it needs to be offset with the commenting character <code>#</code>. It would be nice to have both the commands and the results merged into one document. This is what the R Markdown file does for us.</p>
-</div>
-<div id="r-markdown-.rmd-files" class="section level3">
-<h3><span class="header-section-number">1.3.2</span> R Markdown (.Rmd files)</h3>
-<p>When I was a graduate student, I had to tediously copy and past tables of output from the R console and figures I had made into my Microsoft Word document. Far too often I would realize I had made a small mistake in part (b) of a problem and would have to go back, correct my mistake, and then redo all the laborious copying. I often wished that I could write both the code for my statistical analysis and the long discussion about the interpretation all in the same document so that I could just re-run the analysis with a click of a button and all the tables and figures would be updated by magic. Fortunately that magic<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> now exists.</p>
-<p>To create a new R Markdown document, we use the <code>File -&gt; New File -&gt; R Markdown...</code> dropdown option and a menu will appear asking you for the document title, author, and preferred output type. In order to create a PDF, you’ll need to have LaTeX installed, but the HTML output nearly always works and I’ve had good luck with the MS Word output as well.</p>
-<p>The R Markdown is an implementation of the Markdown syntax that makes it extremely easy to write webpages and give instructions for how to do typesetting sorts of things. This syntax was extended to allow use to embed R commands directly into the document. Perhaps the easiest way to understand the syntax is to look at an at the <a href="http://rmarkdown.rstudio.com">RMarkdown website</a>.</p>
-<p>The R code in my document is nicely separated from my regular text using the three backticks and an instruction that it is R code that needs to be evaluated. The output of this document looks good as a HTML, PDF, or MS Word document. I have actually created this entire document using RMarkdown.</p>
-</div>
-</div>
-<div id="packages" class="section level2">
-<h2><span class="header-section-number">1.4</span> Packages</h2>
-<p>One of the greatest strengths about R is that so many people have devloped add-on packages to do some additional function. For example, plant community ecologists have a large number of multivariate methods that are useful but were not part of R. So Jari Oksanen got together with some other folks and put together a package of functions that they found useful. The result is the package <code>vegan</code>.</p>
-<p>To download and install the package from the Comprehensive R Archive Network (CRAN), you just need to ask RStudio it to install it via the menu <code>Tools</code> -&gt; <code>Install Packages...</code></p>
-<p>Many major analysis types are available via downloaded packages as well as problem sets from various books (e.g. <code>Sleuth3</code> or <code>faraway</code>) and can be easily downloaded and installed via the menu.</p>
-<p>Once a package is downloaded and installed on your computer, it is available, but it is not loaded into your current R session by default. The reason it isn’t loaded is that there are thousands of packages, some of which are quite large and only used occasionally. So to improve overall performance only a few packages are loaded by default and the you must explicitly load packages whenever you want to use them. You only need to load them once per session/script.</p>
-<p>For a similar performance reason, many packages do not automatically load their datasets unless explicitly asked. Therefore when loading datasets from a package, you might need to do a <em>two-step</em> process of loading the package and then loading the dataset.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(faraway)      <span class="co"># load the package into memory</span>
-<span class="kw">data</span>(<span class="st">&quot;babyfood&quot;</span>)      <span class="co"># load the dataset into memory</span></code></pre></div>
-<p>To get information about a package, you can use either of the following afer the library has been loaded:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="dt">help=</span><span class="st">&#39;faraway&#39;</span>)</code></pre></div>
-</div>
-<div id="exercises" class="section level2">
-<h2><span class="header-section-number">1.5</span> Exercises</h2>
-<p>Create an RMarkdown file that solves the following exercises.</p>
+<div id="importing-data" class="section level1">
+<h1><span class="header-section-number">Chapter 7</span> Importing Data</h1>
+<p>Reading data from external sources is necessary. It is most common for data to be in a data-frame like storage, such as a MS Excel workbook, so we will concentrate on reading data into a data.frame.</p>
+<p>In the typical way data is organized, we think of each column of data representing some trait or variable that we might be interested in. In general, we might wish to investigate the relationship between variables. In contrast, the rows of our data represent a single object on which the column traits are measured. For example, in a grade book for recording students scores throughout the semester, their is one row for every student and columns for each assignment. A greenhouse experiment dataset will have a row for every plant and columns for treatment type and biomass.</p>
+<p>One concept that will be important is to recognize that every time you start up RStudio, it picks an appropriate working directory. This is the directory where it will first look for script files or data files. So often I will set the working directory to be the same directory as the Rmarkdown file that I’m working on (because I typically will have a couple of MS Excel files, an Rmarkdown file that does an analysis, and the final output file all stored in the same location). If you click on an Rmarkdown file to open RStudio, then the working directory will automatically be set appropriately. To set the working directory explicitly, you can use the GUI tools <code>Session -&gt; Set Working Directory...</code>.</p>
+<p>When you knit your Rmarkdown file, it always starts up a new version of R with the working directory set to the location of the Rmarkdown file. So whenever you specify a file location, it should be relative to the location of the Rmarkdown file you are working on!</p>
+<div id="comma-separated-data" class="section level2">
+<h2><span class="header-section-number">7.1</span> Comma Separated Data</h2>
+<p>To consider how data might be stored, we first consider the simplest file format… the comma separated values file. In this file time, each of the “cells” of data are separated by a comma. For example, the data file storing scores for three students might be as follows:</p>
+<pre><code>Able, Dave, 98, 92, 94
+Bowles, Jason, 85, 89, 91
+Carr, Jasmine, 81, 96, 97</code></pre>
+<p>Typically when you open up such a file on a computer with Microsoft Excel installed, Excel will open up the file assuming it is a spreadsheet and put each element in its own cell. However, you can also open the file using a more primitive program (say Notepad in Windows, TextEdit on a Mac) you’ll see the raw form of the data.</p>
+<p>Having just the raw data without any sort of column header is problematic (which of the three exams was the final??). Ideally we would have column headers that store the name of the column.</p>
+<pre><code>LastName, FirstName, Exam1, Exam2, FinalExam
+Able, Dave, 98, 92, 94
+Bowles, Jason, 85, 89, 91
+Carr, Jasmine, 81, 96, 97</code></pre>
+<p>To see another example, open the “Body Fat” dataset from the Lock<span class="math inline">\(^{5}\)</span> introductory text book at the website [<a href="http://www.lock5stat.com/datasets/BodyFat.csv" class="uri">http://www.lock5stat.com/datasets/BodyFat.csv</a>]. The first few rows of the file are as follows:</p>
+<pre><code>Bodyfat,Age,Weight,Height,Neck,Chest,Abdomen,Ankle,Biceps,Wrist
+32.3,41,247.25,73.5,42.1,117,115.6,26.3,37.3,19.7
+22.5,31,177.25,71.5,36.2,101.1,92.4,24.6,30.1,18.2
+22,42,156.25,69,35.5,97.8,86,24,31.2,17.4
+12.3,23,154.25,67.75,36.2,93.1,85.2,21.9,32,17.1
+20.5,46,177,70,37.2,99.7,95.6,22.5,29.1,17.7</code></pre>
+<p>To make R read in the data arranged in this format, we need to tell R three things:</p>
 <ol style="list-style-type: decimal">
-<li><p>Calculate <span class="math inline">\(\log\left(6.2\right)\)</span> first using base <span class="math inline">\(e\)</span> and second using base <span class="math inline">\(10\)</span>. To figure out how to do different bases, it might be helpful to look at the help page for the <code>log</code> function.</p></li>
-<li><p>Calculate the square root of 2 and save the result as the variable named sqrt2. Have R display the decimal value of sqrt2. <em>Hint: use Google to find the square root function. Perhaps search on the keywords “R square root function”.</em></p></li>
-<li>This exercise walks you through installing a package with all the datasets used in the textbook <em>The Statistical Sleuth</em>.
-<ol style="list-style-type: lower-alpha">
-<li>Install the package <code>Sleuth3</code> on your computer using RStudio.</li>
-<li>Load the package using the <code>library()</code> command.</li>
-<li>Print out the dataset <code>case0101</code></li>
-</ol></li>
+<li><p>Where does the data live? Often this will be the name of a file on your computer, but the file could just as easily live on the internet (provided your computer has internet access).</p></li>
+<li><p>Is the first row data or is it the column names?</p></li>
+<li><p>What character separates the data? Some programs store data using tabs to distinguish between elements, some others use white space. R’s mechanism for reading in data is flexible enough to allow you to specify what the separator is.</p></li>
+</ol>
+<p>The primary function that we’ll use to read data from a file and into R is the function <code>read.table()</code>. This function has many optional arguments but the most commonly used ones are outlined in the table below.</p>
+<table>
+<colgroup>
+<col width="17%" />
+<col width="22%" />
+<col width="59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Argument</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p><code>file</code></p></td>
+<td></td>
+<td><p>A character string denoting the file location</p></td>
+</tr>
+<tr class="even">
+<td><p><code>header</code></p></td>
+<td><p>FALSE</p></td>
+<td><p>Is the first line column headers?</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>sep</code></p></td>
+<td><p>&quot; &quot;</p></td>
+<td><p>What character separates columns. &quot; &quot; == any whitespace</p></td>
+</tr>
+<tr class="even">
+<td><p><code>skip</code></p></td>
+<td><pre><code>0</code></pre></td>
+<td><p>The number of lines to skip before reading data. This is useful when there are lines of text that describe the data or aren’t actual data</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>na.strings</code></p></td>
+<td><p>‘NA’</p></td>
+<td><p>What values represent missing data. Can have multiple. E.g. <code>c('NA', -9999)</code></p></td>
+</tr>
+<tr class="even">
+<td><p><code>quote</code></p></td>
+<td><p>&quot; and ’</p></td>
+<td><p>For character strings, what characters represent quotes.</p></td>
+</tr>
+</tbody>
+</table>
+<p>To read in the “Body Fat” dataset we could run the R command:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">BodyFat &lt;-<span class="st"> </span><span class="kw">read.table</span>( 
+  <span class="dt">file   =</span> <span class="st">&#39;http://www.lock5stat.com/datasets/BodyFat.csv&#39;</span>,  <span class="co"># where the data lives</span>
+  <span class="dt">header =</span> <span class="ot">TRUE</span>,                                             <span class="co"># first line is column names</span>
+  <span class="dt">sep    =</span> <span class="st">&#39;,&#39;</span> )                                             <span class="co"># Data is sparated by commas</span>
+
+<span class="kw">str</span>(BodyFat)</code></pre></div>
+<pre><code>## &#39;data.frame&#39;:    100 obs. of  10 variables:
+##  $ Bodyfat: num  32.3 22.5 22 12.3 20.5 22.6 28.7 21.3 29.9 21.3 ...
+##  $ Age    : int  41 31 42 23 46 54 43 42 37 41 ...
+##  $ Weight : num  247 177 156 154 177 ...
+##  $ Height : num  73.5 71.5 69 67.8 70 ...
+##  $ Neck   : num  42.1 36.2 35.5 36.2 37.2 39.9 37.9 35.3 42.1 39.8 ...
+##  $ Chest  : num  117 101.1 97.8 93.1 99.7 ...
+##  $ Abdomen: num  115.6 92.4 86 85.2 95.6 ...
+##  $ Ankle  : num  26.3 24.6 24 21.9 22.5 22 23.7 21.9 24.8 25.2 ...
+##  $ Biceps : num  37.3 30.1 31.2 32 29.1 35.9 32.1 30.7 34.4 37.5 ...
+##  $ Wrist  : num  19.7 18.2 17.4 17.1 17.7 18.9 18.7 17.4 18.4 18.7 ...</code></pre>
+<p>Looking at the help file for <code>read.table()</code> we see that there are variants such as <code>read.csv()</code> that sets the default arguments to header and sep more intelligently. Also, there are many options to customize how R responds to different input.</p>
+</div>
+<div id="ms-excel" class="section level2">
+<h2><span class="header-section-number">7.2</span> MS Excel</h2>
+<p>Commonly our data is stored as a MS Excel file. There are two approaches you could use to import the data into R.</p>
+<ol style="list-style-type: decimal">
+<li><p>From within Excel, export the worksheet that contains your data as a comma separated values (.csv) file and proceed using the tools in the previous section.</p></li>
+<li><p>Use functions within R that automatically convert the worksheet into a .csv file and read it in. One package that works nicely for this is the <code>readxl</code> package.</p></li>
+</ol>
+<p>I generally prefer using option 2 because all of my collaborators can’t live without Excel and I’ve resigned myself to this. However if you have complicated formulas in your Excel file, it is often times safer to export it as a .csv file to guarantee the data imported into R is correct. Furthermore, other spreadsheet applications (such as Google sheets) requires you to export the data as a .csv file so it is good to know both paths.</p>
+<p>Because R can only import a complete worksheet, the desired data worksheet must be free of notes to yourself about how the data was collected, preliminary graphics, or other stuff that isn’t the data. I find it very helpful to have a worksheet in which I describe the sampling procedure and describe what each column means (and give the units!), then a second worksheet where the actual data is, and finally a third worksheet where my “Excel Only” collaborators have created whatever plots and summary statistics they need.</p>
+<p>The simplest package for importing Excel files seems to be the package <code>readxl</code>. Another package that does this is the XLConnect which does the Excel -&gt; .csv conversion using Java. Another package the works well is the <code>xlsx</code> package, but it also requires Java to be installed. The nice thing about these two packages is that they also allow you to write Excel files as well. The RODBC package allows R to connect to various databases and it is possible to make it consider an Excel file as an extremely crude database.</p>
+<p>The <code>readxl</code> package provides a function <code>read_exel()</code> that allows us to specify which sheet within the Excel file to read and what character specifies missing data (it assumes a blank cell is missing data if you don’t specifying anything).</p>
+<p>From GitHub, download the files <code>Example_1.xls</code>, <code>Example_2.xls</code>, <code>Example_3.xls</code> and <code>Example_4.xls</code> from the directory [<a href="https://github.com/dereksonderegger/STA_570L_Book/tree/master/data-raw" class="uri">https://github.com/dereksonderegger/STA_570L_Book/tree/master/data-raw</a>]. Place these files in the same directory that you store your course work or make a subdirectory data to store the files in. Make sure that the working directory that RStudio is using is that same directory (Session -&gt; Set Working Directory).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load the library that has the read.xls function. </span>
+<span class="kw">library</span>(readxl)
+
+<span class="co"># Where does the data live relative to my current working location? </span>
+<span class="co">#</span>
+<span class="co"># I made a subdirectory named &#39;data-raw&#39; to store all the data files,</span>
+<span class="co">#   so the path to my data files will be &#39;./data-raw/Example_1.xls&#39;</span>
+<span class="co">#   where &quot;.&quot; indicates the current working directory</span>
+<span class="co"># If you stored the files in the same directory as your RMarkdown script,</span>
+<span class="co">#   then you would use &#39;./Example_1.xls&#39; or just &#39;Example_1.xls&#39;</span>
+
+<span class="co"># read the first worksheet of the Example_1 file</span>
+data<span class="fl">.1</span> &lt;-<span class="st"> </span><span class="kw">read_excel</span>(  <span class="st">&#39;./data-raw/Example_1.xls&#39;</span>  )   
+
+<span class="co"># read the second worksheet where the second worksheet is named &#39;data&#39;</span>
+data<span class="fl">.2</span> &lt;-<span class="st"> </span><span class="kw">read_excel</span>(<span class="st">&#39;./data-raw/Example_2.xls&#39;</span>, <span class="dt">sheet=</span><span class="dv">2</span>     )   
+data<span class="fl">.2</span> &lt;-<span class="st"> </span><span class="kw">read_excel</span>(<span class="st">&#39;./data-raw/Example_2.xls&#39;</span>, <span class="dt">sheet=</span><span class="st">&#39;data&#39;</span>)   </code></pre></div>
+<p>There is one additional problem that shows up while reading in Excel files. Blank columns often show up in Excel files because at some point there was some text in a cell that got deleted but a space remains and Excel still thinks there is data in the column. To fix this, you could find the cell with the space in it, or you can select a bunch of columns at the edge and delete the entire columns. Alternatively, you could remove the column after it is read into R.</p>
+<p>Open up the file <code>Example_4.xls</code> in Excel and confirm that the data sheet has name columns out to carb. Read in the data frame using the following code:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data<span class="fl">.4</span> &lt;-<span class="st"> </span><span class="kw">read_excel</span>(<span class="st">&#39;./data-raw/Example_4.xls&#39;</span>, <span class="dt">sheet=</span><span class="st">&#39;data&#39;</span>)   <span class="co"># Extra Column Example</span>
+<span class="kw">str</span>(data<span class="fl">.4</span>)</code></pre></div>
+<pre><code>## Classes &#39;tbl_df&#39;, &#39;tbl&#39; and &#39;data.frame&#39;:    31 obs. of  13 variables:
+##  $ model: chr  &quot;Mazda RX4&quot; &quot;Mazda RX4 Wag&quot; &quot;Datsun 710&quot; &quot;Hornet 4 Drive&quot; ...
+##  $ mpg  : num  21 21 22.8 21.4 18.7 18.1 14.3 24.4 22.8 19.2 ...
+##  $ cyl  : num  6 6 4 6 8 6 8 4 4 6 ...
+##  $ disp : num  160 160 108 258 360 ...
+##  $ hp   : num  110 110 93 110 175 105 245 62 95 123 ...
+##  $ drat : num  3.9 3.9 3.85 3.08 3.15 2.76 3.21 3.69 3.92 3.92 ...
+##  $ wt   : num  2.62 2.88 2.32 3.21 3.44 ...
+##  $ qsec : num  16.5 17 18.6 19.4 17 ...
+##  $ vs   : num  0 0 1 1 0 1 0 1 1 1 ...
+##  $ am   : num  1 1 1 0 0 0 0 0 0 0 ...
+##  $ gear : num  4 4 4 3 3 3 3 4 4 4 ...
+##  $ carb : num  4 4 1 1 2 1 4 2 2 4 ...
+##  $ NA   : chr  NA NA &quot; &quot; NA ...</code></pre>
+<p>We notice that after reading in the data, there are an additional two columns (labeled <code>X</code> and <code>X.1</code> because R had to make up some column name so it chose that) that just has missing data (the NA stands for not available which means that the data is missing). Go back to the Excel file and go to row 4 column N and notice that the cell isn’t actually blank, there is a space. Delete the space, save the file, and then reload the data into R. You should notice that the extra columns are now gone.</p>
+</div>
+<div id="exercises-6" class="section level2">
+<h2><span class="header-section-number">7.3</span> Exercises</h2>
+<ol style="list-style-type: decimal">
+<li>Download from GitHub the data file Example_5.xls. Open it in Excel and figure out which sheet of data we should import into R. At the same time figure out how many initial rows need to be skipped. Import the data set into a data frame and show the structure of the imported data using the str() command. Make sure that your data has <span class="math inline">\(n=31\)</span> observations and the three columns are appropriately named.</li>
 </ol>
 
 </div>
-</div>
-<div class="footnotes">
-<hr />
-<ol start="1">
-<li id="fn1"><p>To paraphrase Beyonce, “Cause if you liked it, then you should have put a name on it.”<a href="index.html#fnref1">↩</a></p></li>
-<li id="fn2"><p>This isn’t strictly true, the variable <code>.Last.value</code> always has the result of the last expression evaluated, but you can’t go any farther back.<a href="index.html#fnref2">↩</a></p></li>
-<li id="fn3"><p>Clark’s third law states “Any sufficiently advanced technology is indistinguishable from magic.”<a href="index.html#fnref3">↩</a></p></li>
-</ol>
 </div>
             </section>
 
           </div>
         </div>
       </div>
-
-<a href="2-vectors.html" class="navigation navigation-next navigation-unique" aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+<a href="6-matrices-data-frames-and-lists.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="8-data-manipulation.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
 
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
@@ -408,7 +420,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/index.Rmd",
+"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/07_DataImport.Rmd",
 "text": null
 },
 "download": null,
