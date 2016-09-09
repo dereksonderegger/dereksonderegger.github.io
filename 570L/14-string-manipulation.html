@@ -38,8 +38,8 @@ MathJax.Hub.Config({
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="8-data-manipulation.html">
-<link rel="next" href="10-graphing-using-ggplot2.html">
+<link rel="prev" href="13-user-defined-functions.html">
+<link rel="next" href="15-dates-and-times.html">
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -284,106 +284,237 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="data-reshaping" class="section level1">
-<h1><span class="header-section-number">Chapter 9</span> Data Reshaping</h1>
-<p>Most of the time, our data is in the form of a data frame and we are interested in exploring the relationships. However most procedures in R expect the data to show up in a ‘long’ format where each row is an observation and each column is a covariate. In practice, the data is often not stored like that and the data comes to us with repeated observations included on a single row. This is often done as a memory saving technique or because there is some structure in the data that makes the ‘wide’ format attractive. As a result, we need a way to convert data from ‘wide’ to ‘long’ and vice-versa.</p>
-<div id="tidyr" class="section level2">
-<h2><span class="header-section-number">9.1</span> <code>tidyr</code></h2>
-<p>There is a common issue with obtaining data with many columns that you wish were organized as rows. For example, I might have data in a grade book that has several homework scores and I’d like to produce a nice graph that has assignment number on the x-axis and score on the y-axis. Unfortunately this is incredibly hard to do when the data is arranged in the following way:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grade.book &lt;-<span class="st"> </span><span class="kw">rbind</span>(
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Alison&#39;</span>,  <span class="dt">HW.1=</span><span class="dv">8</span>, <span class="dt">HW.2=</span><span class="dv">5</span>, <span class="dt">HW.3=</span><span class="dv">8</span>),
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Brandon&#39;</span>, <span class="dt">HW.1=</span><span class="dv">5</span>, <span class="dt">HW.2=</span><span class="dv">3</span>, <span class="dt">HW.3=</span><span class="dv">6</span>),
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Charles&#39;</span>, <span class="dt">HW.1=</span><span class="dv">9</span>, <span class="dt">HW.2=</span><span class="dv">7</span>, <span class="dt">HW.3=</span><span class="dv">9</span>))
-grade.book</code></pre></div>
-<pre><code>##      name HW.1 HW.2 HW.3
-## 1  Alison    8    5    8
-## 2 Brandon    5    3    6
-## 3 Charles    9    7    9</code></pre>
-<p>What we want to do is turn this data frame from a <em>wide</em> data frame into a <em>long</em> data frame. In MS Excel this is called pivoting. Essentially I’d like to create a data frame with three columns: <code>name</code>, <code>assignment</code>, and <code>score</code>. That is to say that each homework datum really has three pieces of information: who it came from, which homework it was, and what the score was. It doesn’t conceptually matter if I store it as 3 columns or 3 rows so long as there is a way to identify how a student scored on a particular homework. So we want to reshape the HW1 to HW3 columns into two columns (assignment and score).</p>
-<p>This package was built by the sample people that created dplyr and ggplot2 and there is a nice introduction at: [<a href="http://blog.rstudio.org/2014/07/22/introducing-tidyr/" class="uri">http://blog.rstudio.org/2014/07/22/introducing-tidyr/</a>]</p>
-<div id="verbs-1" class="section level3">
-<h3><span class="header-section-number">9.1.1</span> Verbs</h3>
-<p>As with the dplyr package, there are two main verbs to remember:</p>
-<ol style="list-style-type: decimal">
-<li><p><code>gather</code> - Gather multiple columns that are related into two columns that contain the original column name and the value. For example for columns HW1, HW2, HW3 we would gather them into two column HomeworkNumber and Score. In this case, we refer to HomeworkNumber as the key column and Score as the value column. So for any key:value pair you know everything you need.</p></li>
-<li><p><code>spread</code> - This is the opposite of gather. This takes a key column (or columns) and a results column and forms a new column for each level of the key column(s).</p></li>
-</ol>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(tidyr)
-<span class="co"># first we gather the score columns into columns we&#39;ll name Assesment and Score</span>
-tidy.scores &lt;-<span class="st"> </span>grade.book %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">gather</span>( <span class="dt">key=</span>Assessement,  <span class="co"># What should I call the key column</span>
-          <span class="dt">value=</span>Score,      <span class="co"># What should I call the values column</span>
-          HW<span class="fl">.1</span>:HW<span class="fl">.3</span>         <span class="co"># which columns to apply this to</span>
-          )
-tidy.scores</code></pre></div>
-<pre><code>##      name Assessement Score
-## 1  Alison        HW.1     8
-## 2 Brandon        HW.1     5
-## 3 Charles        HW.1     9
-## 4  Alison        HW.2     5
-## 5 Brandon        HW.2     3
-## 6 Charles        HW.2     7
-## 7  Alison        HW.3     8
-## 8 Brandon        HW.3     6
-## 9 Charles        HW.3     9</code></pre>
-<p>To spread the key:value pairs out into a matrix, we use the spread() command.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># score columns into columns we&#39;ll name Assesment and Score</span>
-tidy.scores %&gt;%<span class="st"> </span><span class="kw">spread</span>( <span class="dt">key=</span>Assessement, <span class="dt">value=</span>Score )</code></pre></div>
-<pre><code>##      name HW.1 HW.2 HW.3
-## 1  Alison    8    5    8
-## 2 Brandon    5    3    6
-## 3 Charles    9    7    9</code></pre>
-<p>One way to keep straight which is the key column is that the key is the category, while value is the numerical value or response.</p>
+<div id="string-manipulation" class="section level1">
+<h1><span class="header-section-number">Chapter 14</span> String Manipulation</h1>
+<p>Strings make up a very important class of data. Data being read into R often come in the form of character strings where different parts might mean different things. For example a sample ID of “R1_P2_C1_2012_05_28” might represent data from Region 1, Park 2, Camera 1, taken on May 28, 2012. It is important that we have a set of utilities that allow us to split and combine character strings in a easy and consistent fashion.</p>
+<blockquote>
+<p>Unfortunately, the utilities included in the base version of R are somewhat inconsistent and were not designed to work nicely together. Hadley Wickham, the developer of <code>ggplot2</code> and <code>dplyr</code> has this to say: “R provides a solid set of string operations, but because they have grown organically over time, they can be inconsistent and a little hard to learn. Additionally, they lag behind the string operations in other programming languages, so that some things that are easy to do in languages like Ruby or Python are rather hard to do in R.” – Hadley Wickham</p>
+</blockquote>
+<p>For this chapter we will introduce the most commonly used functions from the base version of R that you might use or see in other people’s code. Second, we introduce Dr Wickham’s <code>stringr</code> package that provides many useful functions that operate in a consistent manner.</p>
+<div id="base-function" class="section level2">
+<h2><span class="header-section-number">14.1</span> Base function</h2>
+<p>1.1.1 <code>paste()</code></p>
+<p>The most basic thing we will want to do is to combine two strings or to combine a string with a numerical value. The <code>paste()</code> command will take one or more R objects and converts them to character strings and then pastes them together to form one or more character strings. It has the form:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( ..., <span class="dt">sep =</span> <span class="st">&#39; &#39;</span>, <span class="dt">collapse =</span> <span class="ot">NULL</span> )</code></pre></div>
+<p>The <code>...</code> piece means that we can pass any number of objects to be pasted together. The <code>sep</code> argument gives the string that separates the strings to be joined and the collapse argument that specifies if a simplification should be performed before pasting together.</p>
+<p>Suppose we want to combine the strings “Peanut butter” and “Jelly” then we could execute:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="st">&quot;PeanutButter&quot;</span>, <span class="st">&quot;Jelly&quot;</span> )</code></pre></div>
+<pre><code>## [1] &quot;PeanutButter Jelly&quot;</code></pre>
+<p>Notice that without specifying the separator character, R chose to put a space between the two strings. We could specify whatever we wanted:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="st">&quot;Hello&quot;</span>, <span class="st">&quot;World&quot;</span>, <span class="dt">sep=</span><span class="st">&#39;_&#39;</span> )</code></pre></div>
+<pre><code>## [1] &quot;Hello_World&quot;</code></pre>
+<p>Also we can combine strings with numerical values</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="st">&quot;Pi is equal to&quot;</span>, pi )</code></pre></div>
+<pre><code>## [1] &quot;Pi is equal to 3.14159265358979&quot;</code></pre>
+<p>We can combine vectors of similar or different lengths as well. By default R assumes that you want to produce a vector of character strings as output.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="st">&quot;n =&quot;</span>, <span class="kw">c</span>(<span class="dv">5</span>,<span class="dv">25</span>,<span class="dv">100</span>) )</code></pre></div>
+<pre><code>## [1] &quot;n = 5&quot;   &quot;n = 25&quot;  &quot;n = 100&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">first.names &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Robb&#39;</span>,<span class="st">&#39;Stannis&#39;</span>,<span class="st">&#39;Daenerys&#39;</span>)
+last.names &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;Stark&#39;</span>,<span class="st">&#39;Baratheon&#39;</span>,<span class="st">&#39;Targaryen&#39;</span>)
+<span class="kw">paste</span>( first.names, last.names)</code></pre></div>
+<pre><code>## [1] &quot;Robb Stark&quot;         &quot;Stannis Baratheon&quot;  &quot;Daenerys Targaryen&quot;</code></pre>
+<p>If we want <code>paste()</code> produce just a single string of output, use the <code>collapse=</code> argument to first paste together each input vector (separated by the <code>collapse</code> character).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="kw">paste</span>( <span class="st">&quot;n =&quot;</span>, <span class="kw">c</span>(<span class="dv">5</span>,<span class="dv">25</span>,<span class="dv">100</span>) ) )</code></pre></div>
+<pre><code>## [1] &quot;n = 5&quot;   &quot;n = 25&quot;  &quot;n = 100&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>( <span class="st">&quot;n =&quot;</span>, <span class="kw">c</span>(<span class="dv">5</span>,<span class="dv">25</span>,<span class="dv">100</span>), <span class="dt">collapse=</span><span class="st">&#39;:&#39;</span> )</code></pre></div>
+<pre><code>## [1] &quot;n = 5:n = 25:n = 100&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>(first.names, last.names, <span class="dt">sep=</span><span class="st">&#39;.&#39;</span>, <span class="dt">collapse=</span><span class="st">&#39; : &#39;</span>)</code></pre></div>
+<pre><code>## [1] &quot;Robb.Stark : Stannis.Baratheon : Daenerys.Targaryen&quot;</code></pre>
+<p>Notice we could use the <code>paste()</code> command with the collapse option to combine a vector of character strings together.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>(first.names, <span class="dt">collapse=</span><span class="st">&#39;:&#39;</span>)</code></pre></div>
+<pre><code>## [1] &quot;Robb:Stannis:Daenerys&quot;</code></pre>
+</div>
+<div id="package-stringr-basic-operations" class="section level2">
+<h2><span class="header-section-number">14.2</span> Package stringr: basic operations</h2>
+<blockquote>
+<p>The goal of stringr is to make a consistent user interface to a suite of functions to manipulate strings. “(stringr) is a set of simple wrappers that make R’s string functions more consistent, simpler and easier to use. It does this by ensuring that: function and argument names (and positions) are consistent, all functions deal with NA’s and zero length character appropriately, and the output data structures from each function matches the input data structures of other functions.” - Hadley Wickham</p>
+</blockquote>
+<p>We’ll investigate the most commonly used function but there are many we will ignore.</p>
+<pre><code> Function         |     Description</code></pre>
+<p>———————-|———————————————————– <code>str_c()</code> | string concatenation, similar to paste <code>str_length()</code> | number of characters in the string <code>str_sub()</code> | extract a substring <code>str_trim()</code> | remove leading and trailing whitespace <code>str_pad()</code> | pad a string with empty space to make it a certain length</p>
+<div id="concatenating-with-str_c-or-str_join" class="section level3">
+<h3><span class="header-section-number">14.2.1</span> Concatenating with str_c() or str_join()</h3>
+<p>The first thing we do is to concatenate two strings or two vectors of strings similarly to the <code>paste()</code> command. The <code>str_c()</code> and <code>str_join()</code> functions are a synonym for the exact same function, but str_join() might be a more natural verb to use and remember. The syntax is:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_c</span>( ..., <span class="dt">sep=</span><span class="st">&#39;&#39;</span>, <span class="dt">collapse=</span><span class="ot">NULL</span>)</code></pre></div>
+<p>You can think of the inputs building a matrix of strings, with each input creating a column of the matrix. For each row, <code>str_c()</code> first joins all the columns (using the separator character given in <code>sep</code>) into a single column of strings. If the collapse argument is non-NULL, the function takes the vector and joins each element together using collapse as the separator character.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load the stringr library</span>
+<span class="kw">library</span>(stringr)</code></pre></div>
+<pre><code>## Warning: package &#39;stringr&#39; was built under R version 3.2.5</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># envisioning the matrix of strings</span>
+<span class="kw">cbind</span>(first.names, last.names)</code></pre></div>
+<pre><code>##      first.names last.names 
+## [1,] &quot;Robb&quot;      &quot;Stark&quot;    
+## [2,] &quot;Stannis&quot;   &quot;Baratheon&quot;
+## [3,] &quot;Daenerys&quot;  &quot;Targaryen&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># join the columns together</span>
+full.names &lt;-<span class="st"> </span><span class="kw">str_c</span>( first.names, last.names, <span class="dt">sep=</span><span class="st">&#39;.&#39;</span>)
+<span class="kw">cbind</span>( first.names, last.names, full.names)</code></pre></div>
+<pre><code>##      first.names last.names  full.names          
+## [1,] &quot;Robb&quot;      &quot;Stark&quot;     &quot;Robb.Stark&quot;        
+## [2,] &quot;Stannis&quot;   &quot;Baratheon&quot; &quot;Stannis.Baratheon&quot; 
+## [3,] &quot;Daenerys&quot;  &quot;Targaryen&quot; &quot;Daenerys.Targaryen&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Join each of the rows together separated by collapse</span>
+<span class="kw">str_c</span>( first.names, last.names, <span class="dt">sep=</span><span class="st">&#39;.&#39;</span>, <span class="dt">collapse=</span><span class="st">&#39; : &#39;</span>)</code></pre></div>
+<pre><code>## [1] &quot;Robb.Stark : Stannis.Baratheon : Daenerys.Targaryen&quot;</code></pre>
+</div>
+<div id="calculating-string-length-with-str_length" class="section level3">
+<h3><span class="header-section-number">14.2.2</span> Calculating string length with str_length()</h3>
+<p>The <code>str_length()</code> function calculates the length of each string in the vector of strings passed to it.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">text &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;WordTesting&#39;</span>, <span class="st">&#39;With a space&#39;</span>, <span class="ot">NA</span>, <span class="st">&#39;Night&#39;</span>)
+<span class="kw">str_length</span>( text )</code></pre></div>
+<pre><code>## [1] 11 12 NA  5</code></pre>
+<p>Notice that <code>str_length()</code> correctly interprets the missing data as missing and that the length ought to also be missing.</p>
+</div>
+<div id="extracting-substrings-with-str_sub" class="section level3">
+<h3><span class="header-section-number">14.2.3</span> Extracting substrings with str_sub()</h3>
+<p>If we know we want to extract the <span class="math inline">\(3^{rd}\)</span> through <span class="math inline">\(6^{th}\)</span> letters in a string, this function will grab them.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_sub</span>(text, <span class="dt">start=</span><span class="dv">3</span>, <span class="dt">end=</span><span class="dv">6</span>)</code></pre></div>
+<pre><code>## [1] &quot;rdTe&quot; &quot;th a&quot; NA     &quot;ght&quot;</code></pre>
+<p>If a given string isn’t long enough to contain all the necessary indices, <code>str_sub()</code> returns only the letters that where there (as in the above case for “Night”</p>
+</div>
+<div id="pad-a-string-with-str_pad" class="section level3">
+<h3><span class="header-section-number">14.2.4</span> Pad a string with str_pad()</h3>
+<p>Sometimes we to make every string in a vector the same length to facilitate display or in the creation of a uniform system of assigning ID numbers. The <code>str_pad()</code> function will add spaces at either the beginning or end of the of every string appropriately.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_pad</span>(first.names, <span class="dt">width=</span><span class="dv">8</span>)</code></pre></div>
+<pre><code>## [1] &quot;    Robb&quot; &quot; Stannis&quot; &quot;Daenerys&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_pad</span>(first.names, <span class="dt">width=</span><span class="dv">8</span>, <span class="dt">side=</span><span class="st">&#39;right&#39;</span>, <span class="dt">pad=</span><span class="st">&#39;*&#39;</span>)</code></pre></div>
+<pre><code>## [1] &quot;Robb****&quot; &quot;Stannis*&quot; &quot;Daenerys&quot;</code></pre>
+</div>
+<div id="trim-a-string-with-str_trim" class="section level3">
+<h3><span class="header-section-number">14.2.5</span> Trim a string with str_trim()</h3>
+<p>This removes any leading or trailing whitespace where whitespace is defined as spaces ‘’, tabs <code>\t</code> or returns <code>\n</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">text &lt;-<span class="st"> &#39; Some text. </span><span class="ch">\n</span><span class="st">  &#39;</span>
+<span class="kw">print</span>(text)</code></pre></div>
+<pre><code>## [1] &quot; Some text. \n  &quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_trim</span>(text)</code></pre></div>
+<pre><code>## [1] &quot;Some text.&quot;</code></pre>
 </div>
 </div>
-<div id="exercises-8" class="section level2">
-<h2><span class="header-section-number">9.2</span> Exercises</h2>
-<ol style="list-style-type: decimal">
-<li><p>Suppose we are given information about the maximum daily temperature from a weather station in Flagstaff, AZ. The file is available at the GitHub site that this book is hosted on.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">FlagTemp &lt;-<span class="st">  </span><span class="kw">read.csv</span>(
-  <span class="st">&#39;https://github.com/dereksonderegger/STA_570L_Book/raw/master/data-raw/FlagMaxTemp.csv&#39;</span>,
-   <span class="dt">header=</span><span class="ot">TRUE</span>, <span class="dt">sep=</span><span class="st">&#39;,&#39;</span>)</code></pre></div>
-<p>This file is in a wide format, where each row represents a month and the columns X1, X2, …, X31 represent the day of the month the observation was made.</p>
-<ol style="list-style-type: lower-alpha">
-<li><p>Convert data set to the long format where the data has only four columns: <code>Year</code>, <code>Month</code>, <code>Day</code>, <code>Tmax</code>.</p></li>
-<li><p>Calculate the average monthly maximum temperature for each Month in the dataset (So there will be 360 mean maximum temperatures).</p></li>
-<li><p>Convert the average month maximums back to a wide data format where each line represents a year and there are 12 columns of temperature data (one for each month) along with a column for the year.</p></li>
-</ol></li>
-<li>A common task is to take a set of data that has multiple categorical variables and create a table of the number of cases for each combination. An introductory statistics textbook contains a dataset summarizing student surveys from several sections of an intro class. The two variables of interest for us are <code>Gender</code> and <code>Year</code> which are the students gender and year in college.
-<ol style="list-style-type: lower-alpha">
-<li><p>Download the dataset using the following:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Survey &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&#39;http://www.lock5stat.com/datasets/StudentSurvey.csv&#39;</span>)</code></pre></div></li>
-<li>Using some combination of <code>dplyr</code> functions, produce a data set with eight rows that contains the number of responses for each gender:year combination.</li>
-<li><p>Using <code>tidyr</code> commands, produce a table of the number of responses in the following form:</p>
+<div id="package-stringr-pattern-matching" class="section level2">
+<h2><span class="header-section-number">14.3</span> Package stringr: Pattern Matching</h2>
+<p>The previous commands are all quite useful but the most powerful string operation is take a string and match some pattern within it. The following commands are available within <code>stringr</code>.</p>
 <table>
+<colgroup>
+<col width="32%" />
+<col width="67%" />
+</colgroup>
 <thead>
 <tr class="header">
-<th>Gender</th>
-<th>First Year</th>
-<th>Sophmore</th>
-<th>Junior</th>
-<th>Senior</th>
+<th>Function</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Female</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p><code>str_detect()</code></p></td>
+<td><p>Detect if a pattern occurs in input string</p></td>
 </tr>
 <tr class="even">
-<td><strong>Male</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td><p><code>str_locate()</code> <code>str_locate_all()</code></p></td>
+<td><p>Locates the first (or all) positions of a pattern.</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>str_extract()</code> <code>str_extract_all()</code></p></td>
+<td><p>Extracts the first (or all) substrings corresponding to a pattern</p></td>
+</tr>
+<tr class="even">
+<td><p><code>str_replace()</code> <code>str_replace_all()</code></p></td>
+<td><p>Replaces the matched substring(s) with a new pattern</p></td>
+</tr>
+<tr class="odd">
+<td><p><code>str_split()</code> <code>str_split_fixed()</code></p></td>
+<td><p>Splits the input string based on the inputed pattern</p></td>
 </tr>
 </tbody>
-</table></li>
-</ol></li>
+</table>
+<p>We will first examine these functions using a very simple pattern matching algorithm where we are matching a specific pattern. For most people, this is as complex as we need.</p>
+<p>Suppose that we have a vector of strings that contain a date in the form “2012-May-27” and we want to manipulate them to extract certain information.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">test.vector &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;2008-Feb-10&#39;</span>, <span class="st">&#39;2010-Sept-18&#39;</span>, <span class="st">&#39;2013-Jan-11&#39;</span>, <span class="st">&#39;2016-Jan-2&#39;</span>)</code></pre></div>
+<div id="detecting-a-pattern-using-str_detect" class="section level3">
+<h3><span class="header-section-number">14.3.1</span> Detecting a pattern using str_detect()</h3>
+<p>Suppose we want to know which dates are in September. We want to detect if the pattern “Sept” occurs in the strings. It is important that I used fixed(“Sept”) in this code to “turn off” the complicated regular expression matching rules and just look for exactly what I specified.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_detect</span>( test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;Sept&#39;</span>) )</code></pre></div>
+<pre><code>## [1] FALSE  TRUE FALSE FALSE</code></pre>
+<p>Here we see that the second string in the test vector included the substring “Sept” but none of the others did.</p>
+</div>
+<div id="locating-a-pattern-using-str_locate" class="section level3">
+<h3><span class="header-section-number">14.3.2</span> Locating a pattern using str_locate()</h3>
+<p>To figure out where the “-” characters are, we can use the <code>str_locate()</code> function.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_locate</span>(test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;-&#39;</span>) )</code></pre></div>
+<pre><code>##      start end
+## [1,]     5   5
+## [2,]     5   5
+## [3,]     5   5
+## [4,]     5   5</code></pre>
+<p>which shows that the first dash occurs as the <span class="math inline">\(5^{th}\)</span> character in each string. If we wanted all the dashes in the string the following works.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_locate_all</span>(test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;-&#39;</span>) )</code></pre></div>
+<pre><code>## [[1]]
+##      start end
+## [1,]     5   5
+## [2,]     9   9
+## 
+## [[2]]
+##      start end
+## [1,]     5   5
+## [2,]    10  10
+## 
+## [[3]]
+##      start end
+## [1,]     5   5
+## [2,]     9   9
+## 
+## [[4]]
+##      start end
+## [1,]     5   5
+## [2,]     9   9</code></pre>
+<p>The output of <code>str_locate_all()</code> is a list of matrices that gives the start and end of each matrix. Using this information, we could grab the Year/Month/Day information out of each of the dates. We won’t do that here because it will be easier to do this using <code>str_split()</code>.</p>
+</div>
+<div id="replacing-substrings-using-str_replace" class="section level3">
+<h3><span class="header-section-number">14.3.3</span> Replacing substrings using <code>str_replace()</code></h3>
+<p>Suppose we didn’t like using “-” to separate the Year/Month/Day but preferred a space, or an underscore, or something else. This can be done by replacing all of the “-” with the desired character. The <code>str_replace()</code> function only replaces the first match, but <code>str_replace_all()</code> replaces all matches.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_replace</span>(test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;-&#39;</span>), <span class="dt">replacement=</span><span class="kw">fixed</span>(<span class="st">&#39;:&#39;</span>) )</code></pre></div>
+<pre><code>## [1] &quot;2008:Feb-10&quot;  &quot;2010:Sept-18&quot; &quot;2013:Jan-11&quot;  &quot;2016:Jan-2&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_replace_all</span>(test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;-&#39;</span>), <span class="dt">replacement=</span><span class="kw">fixed</span>(<span class="st">&#39;:&#39;</span>) )</code></pre></div>
+<pre><code>## [1] &quot;2008:Feb:10&quot;  &quot;2010:Sept:18&quot; &quot;2013:Jan:11&quot;  &quot;2016:Jan:2&quot;</code></pre>
+</div>
+<div id="splitting-into-substrings-using-str_split" class="section level3">
+<h3><span class="header-section-number">14.3.4</span> Splitting into substrings using <code>str_split()</code></h3>
+<p>We can split each of the dates into three smaller substrings using the <code>str_split()</code> command, which returns a list where each element of the list is a vector containing pieces of the original string (excluding the pattern we matched on).</p>
+<p>If we know that all the strings will be split into a known number of substrings (we have to specify how many substrings to match with the <code>n=</code> argument), we can use <code>str_split_fixed()</code> to get a matrix of substrings instead of list of substrings. It is somewhat unfortunate that the <code>_fixed</code> modifier to the function name is the same as what we use to specify to use simple pattern matching.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">str_split_fixed</span>(test.vector, <span class="dt">pattern=</span><span class="kw">fixed</span>(<span class="st">&#39;-&#39;</span>), <span class="dt">n=</span><span class="dv">3</span>)</code></pre></div>
+<pre><code>##      [,1]   [,2]   [,3]
+## [1,] &quot;2008&quot; &quot;Feb&quot;  &quot;10&quot;
+## [2,] &quot;2010&quot; &quot;Sept&quot; &quot;18&quot;
+## [3,] &quot;2013&quot; &quot;Jan&quot;  &quot;11&quot;
+## [4,] &quot;2016&quot; &quot;Jan&quot;  &quot;2&quot;</code></pre>
+</div>
+</div>
+<div id="regular-expressions" class="section level2">
+<h2><span class="header-section-number">14.4</span> Regular Expressions</h2>
+<p>The next section will introduce using regular expressions. Regular expressions are a way to specify very complicated patterns. Go look at <a href="https://xkcd.com/208/" class="uri">https://xkcd.com/208/</a> to gain insight into just how geeky regular expressions are.</p>
+<p>Regular expressions are a way of precisely writing out patterns that are very complicated. The stringr package pattern arguments can be given using standard regular expressions (not perl-style!) instead of using fixed strings.</p>
+<p>Regular expressions are extremely powerful for sifting through large amounts of text. For example, we might want to extract all of the 4 digit substrings (the years) out of our dates vector, or I might want to find all cases in a paragraph of text of words that begin with a capital letter and are at least 5 letters long. In another, somewhat nefarious example, spammers might have downloaded a bunch of text from webpages and want to be able to look for email addresses. So as a first pass, they want to match a pattern: <span class="math display">\[\underset{\textrm{1 or more letters}}{\underbrace{\texttt{Username}}}\texttt{@}\;\;\underset{\textrm{1 or more letter}}{\underbrace{\texttt{OrganizationName}}}\;\texttt{.\;}\begin{cases}
+\texttt{com}\\
+\texttt{org}\\
+\texttt{edu}
+\end{cases}\]</span> where the <code>Username</code> and <code>OrganizationName</code> can be pretty much anything, but a valid email address looks like this. We might get even more creative and recognize that my list of possible endings could include country codes as well.</p>
+<p>For most people, I don’t recommend opening the regular expression can-of-worms, but it is good to know that these pattern matching utilities are available within R and you don’t need to export your pattern matching problems to Perl or Python.</p>
+</div>
+<div id="exercises-13" class="section level2">
+<h2><span class="header-section-number">14.5</span> Exercises</h2>
+<ol style="list-style-type: decimal">
+<li><p>Using the <code>test.vector</code> of dates given in the text, create a vector of the years using stringr functions.</p></li>
+<li><p>The following file names were used in a camera trap study. The S number represents the site, P is the plot within a site, C is the camera number within the plot, the first string of numbers is the YearMonthDay and the second string of numbers is the HourMinuteSecond.</p></li>
 </ol>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">file.names &lt;-<span class="st"> </span><span class="kw">c</span>( <span class="st">&#39;S123.P2.C10_20120621_213422.jpg&#39;</span>,
+                 <span class="st">&#39;S10.P1.C1_20120622_050148.jpg&#39;</span>,
+                 <span class="st">&#39;S187.P2.C2_20120702_023501.jpg&#39;</span>)</code></pre></div>
+<p>Use a combination of <code>str_sub()</code> and <code>str_split()</code> to produce a data frame with columns corresponding to the <code>site</code>, <code>plot</code>, <code>camera</code>, <code>year</code>, <code>month</code>, <code>day</code>, <code>hour</code>, <code>minute</code>, and <code>second</code> for these three file names. So we want to produce code that will create the data frame:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"> Site Plot Camera Year Month Day Hour Minute Second
+ S123   P2    C10 <span class="dv">2012</span>    <span class="dv">06</span>  <span class="dv">21</span>   <span class="dv">21</span>     <span class="dv">34</span>     <span class="dv">22</span>
+  S10   P1     C1 <span class="dv">2012</span>    <span class="dv">06</span>  <span class="dv">22</span>   <span class="dv">05</span>     <span class="dv">01</span>     <span class="dv">48</span>
+ S187   P2     C2 <span class="dv">2012</span>    <span class="dv">07</span>  <span class="dv">02</span>   <span class="dv">02</span>     <span class="dv">35</span>     <span class="dv">01</span></code></pre></div>
+<p><em>Hint: Split the file names first by the underscore, and save the resulting three pieces as SiteInfo, DateInfo and TimeInfo and then further break each of those apart in whatever way is appropriate.</em></p>
 
 </div>
 </div>
@@ -392,8 +523,8 @@ tidy.scores %&gt;%<span class="st"> </span><span class="kw">spread</span>( <span
           </div>
         </div>
       </div>
-<a href="8-data-manipulation.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="10-graphing-using-ggplot2.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+<a href="13-user-defined-functions.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="15-dates-and-times.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
 
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
@@ -420,7 +551,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/09_DataReshaping.Rmd",
+"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/14_Strings.Rmd",
 "text": null
 },
 "download": null,

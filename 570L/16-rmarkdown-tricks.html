@@ -38,8 +38,8 @@ MathJax.Hub.Config({
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="8-data-manipulation.html">
-<link rel="next" href="10-graphing-using-ggplot2.html">
+<link rel="prev" href="15-dates-and-times.html">
+
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -284,116 +284,492 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="data-reshaping" class="section level1">
-<h1><span class="header-section-number">Chapter 9</span> Data Reshaping</h1>
-<p>Most of the time, our data is in the form of a data frame and we are interested in exploring the relationships. However most procedures in R expect the data to show up in a ‘long’ format where each row is an observation and each column is a covariate. In practice, the data is often not stored like that and the data comes to us with repeated observations included on a single row. This is often done as a memory saving technique or because there is some structure in the data that makes the ‘wide’ format attractive. As a result, we need a way to convert data from ‘wide’ to ‘long’ and vice-versa.</p>
-<div id="tidyr" class="section level2">
-<h2><span class="header-section-number">9.1</span> <code>tidyr</code></h2>
-<p>There is a common issue with obtaining data with many columns that you wish were organized as rows. For example, I might have data in a grade book that has several homework scores and I’d like to produce a nice graph that has assignment number on the x-axis and score on the y-axis. Unfortunately this is incredibly hard to do when the data is arranged in the following way:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">grade.book &lt;-<span class="st"> </span><span class="kw">rbind</span>(
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Alison&#39;</span>,  <span class="dt">HW.1=</span><span class="dv">8</span>, <span class="dt">HW.2=</span><span class="dv">5</span>, <span class="dt">HW.3=</span><span class="dv">8</span>),
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Brandon&#39;</span>, <span class="dt">HW.1=</span><span class="dv">5</span>, <span class="dt">HW.2=</span><span class="dv">3</span>, <span class="dt">HW.3=</span><span class="dv">6</span>),
-  <span class="kw">data.frame</span>(<span class="dt">name=</span><span class="st">&#39;Charles&#39;</span>, <span class="dt">HW.1=</span><span class="dv">9</span>, <span class="dt">HW.2=</span><span class="dv">7</span>, <span class="dt">HW.3=</span><span class="dv">9</span>))
-grade.book</code></pre></div>
-<pre><code>##      name HW.1 HW.2 HW.3
-## 1  Alison    8    5    8
-## 2 Brandon    5    3    6
-## 3 Charles    9    7    9</code></pre>
-<p>What we want to do is turn this data frame from a <em>wide</em> data frame into a <em>long</em> data frame. In MS Excel this is called pivoting. Essentially I’d like to create a data frame with three columns: <code>name</code>, <code>assignment</code>, and <code>score</code>. That is to say that each homework datum really has three pieces of information: who it came from, which homework it was, and what the score was. It doesn’t conceptually matter if I store it as 3 columns or 3 rows so long as there is a way to identify how a student scored on a particular homework. So we want to reshape the HW1 to HW3 columns into two columns (assignment and score).</p>
-<p>This package was built by the sample people that created dplyr and ggplot2 and there is a nice introduction at: [<a href="http://blog.rstudio.org/2014/07/22/introducing-tidyr/" class="uri">http://blog.rstudio.org/2014/07/22/introducing-tidyr/</a>]</p>
-<div id="verbs-1" class="section level3">
-<h3><span class="header-section-number">9.1.1</span> Verbs</h3>
-<p>As with the dplyr package, there are two main verbs to remember:</p>
-<ol style="list-style-type: decimal">
-<li><p><code>gather</code> - Gather multiple columns that are related into two columns that contain the original column name and the value. For example for columns HW1, HW2, HW3 we would gather them into two column HomeworkNumber and Score. In this case, we refer to HomeworkNumber as the key column and Score as the value column. So for any key:value pair you know everything you need.</p></li>
-<li><p><code>spread</code> - This is the opposite of gather. This takes a key column (or columns) and a results column and forms a new column for each level of the key column(s).</p></li>
-</ol>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(tidyr)
-<span class="co"># first we gather the score columns into columns we&#39;ll name Assesment and Score</span>
-tidy.scores &lt;-<span class="st"> </span>grade.book %&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">gather</span>( <span class="dt">key=</span>Assessement,  <span class="co"># What should I call the key column</span>
-          <span class="dt">value=</span>Score,      <span class="co"># What should I call the values column</span>
-          HW<span class="fl">.1</span>:HW<span class="fl">.3</span>         <span class="co"># which columns to apply this to</span>
-          )
-tidy.scores</code></pre></div>
-<pre><code>##      name Assessement Score
-## 1  Alison        HW.1     8
-## 2 Brandon        HW.1     5
-## 3 Charles        HW.1     9
-## 4  Alison        HW.2     5
-## 5 Brandon        HW.2     3
-## 6 Charles        HW.2     7
-## 7  Alison        HW.3     8
-## 8 Brandon        HW.3     6
-## 9 Charles        HW.3     9</code></pre>
-<p>To spread the key:value pairs out into a matrix, we use the spread() command.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># score columns into columns we&#39;ll name Assesment and Score</span>
-tidy.scores %&gt;%<span class="st"> </span><span class="kw">spread</span>( <span class="dt">key=</span>Assessement, <span class="dt">value=</span>Score )</code></pre></div>
-<pre><code>##      name HW.1 HW.2 HW.3
-## 1  Alison    8    5    8
-## 2 Brandon    5    3    6
-## 3 Charles    9    7    9</code></pre>
-<p>One way to keep straight which is the key column is that the key is the category, while value is the numerical value or response.</p>
-</div>
-</div>
-<div id="exercises-8" class="section level2">
-<h2><span class="header-section-number">9.2</span> Exercises</h2>
-<ol style="list-style-type: decimal">
-<li><p>Suppose we are given information about the maximum daily temperature from a weather station in Flagstaff, AZ. The file is available at the GitHub site that this book is hosted on.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">FlagTemp &lt;-<span class="st">  </span><span class="kw">read.csv</span>(
-  <span class="st">&#39;https://github.com/dereksonderegger/STA_570L_Book/raw/master/data-raw/FlagMaxTemp.csv&#39;</span>,
-   <span class="dt">header=</span><span class="ot">TRUE</span>, <span class="dt">sep=</span><span class="st">&#39;,&#39;</span>)</code></pre></div>
-<p>This file is in a wide format, where each row represents a month and the columns X1, X2, …, X31 represent the day of the month the observation was made.</p>
-<ol style="list-style-type: lower-alpha">
-<li><p>Convert data set to the long format where the data has only four columns: <code>Year</code>, <code>Month</code>, <code>Day</code>, <code>Tmax</code>.</p></li>
-<li><p>Calculate the average monthly maximum temperature for each Month in the dataset (So there will be 360 mean maximum temperatures).</p></li>
-<li><p>Convert the average month maximums back to a wide data format where each line represents a year and there are 12 columns of temperature data (one for each month) along with a column for the year.</p></li>
-</ol></li>
-<li>A common task is to take a set of data that has multiple categorical variables and create a table of the number of cases for each combination. An introductory statistics textbook contains a dataset summarizing student surveys from several sections of an intro class. The two variables of interest for us are <code>Gender</code> and <code>Year</code> which are the students gender and year in college.
-<ol style="list-style-type: lower-alpha">
-<li><p>Download the dataset using the following:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Survey &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&#39;http://www.lock5stat.com/datasets/StudentSurvey.csv&#39;</span>)</code></pre></div></li>
-<li>Using some combination of <code>dplyr</code> functions, produce a data set with eight rows that contains the number of responses for each gender:year combination.</li>
-<li><p>Using <code>tidyr</code> commands, produce a table of the number of responses in the following form:</p>
+<div id="rmarkdown-tricks" class="section level1">
+<h1><span class="header-section-number">Chapter 16</span> Rmarkdown Tricks</h1>
+<p>We have been using RMarkdown files to combine the analysis and discussion into one nice document that contains all the analysis steps so that your research is reproducible.</p>
+<p>There are many resources on the web about Markdown and the variant that RStudio uses (called RMarkdown), but the easiest reference is to just use the RStudio help tab to access the help. I particular like <code>Help -&gt; Cheatsheets -&gt; RMarkdown Referece Guide</code> because it gives me the standard Markdown information but also a bunch of information about the options I can use to customize the behavior of individual R code chunks.</p>
+<p>Two topics that aren’t covered in the RStudio help files are how to insert mathematical text symbols and how to produce decent looking tables without too much fuss.</p>
+<p>Most of what is presented here isn’t primarily about how to use R, but rather how to work with tools in RMarkdown so that the final product is neat and tidy. While you could print out your RMarkdown file and then clean it up in MS Word, sometimes there is a good to want as nice a starting point as possible.</p>
+<div id="mathematical-expressions" class="section level2">
+<h2><span class="header-section-number">16.1</span> Mathematical expressions</h2>
+<p>The primary way to insert a mathematical expression is to use a markup language called LaTeX. This is a very powerful system and it is what most Mathematicians use to write their documents. The downside is that there is a lot to learn. However, you can get most of what you need pretty easily.</p>
+<p>For RMarkdown to recognize you are writting math using LaTeX, you need to enclose the LaTeX with dollar signs ($). Some examples of common LaTeX patterns are given below:</p>
 <table>
+<colgroup>
+<col width="18%" />
+<col width="23%" />
+<col width="17%" />
+<col width="19%" />
+<col width="20%" />
+</colgroup>
 <thead>
 <tr class="header">
-<th>Gender</th>
-<th>First Year</th>
-<th>Sophmore</th>
-<th>Junior</th>
-<th>Senior</th>
+<th align="center">Goal</th>
+<th align="center">LaTeX</th>
+<th align="center">Output</th>
+<th align="center">LaTeX</th>
+<th align="center">Output</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Female</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td align="center">power</td>
+<td align="center"><code>$x^2$</code></td>
+<td align="center"><span class="math inline">\(x^2\)</span></td>
+<td align="center"><code>$y^{0.95}$</code></td>
+<td align="center"><span class="math inline">\(y^{0.95}\)</span></td>
 </tr>
 <tr class="even">
-<td><strong>Male</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
+<td align="center">Subscript</td>
+<td align="center"><code>$x_i$</code></td>
+<td align="center"><span class="math inline">\(x_i\)</span></td>
+<td align="center"><code>$t_{24}$</code></td>
+<td align="center"><span class="math inline">\(t_{24}\)</span></td>
+</tr>
+<tr class="odd">
+<td align="center">Greek</td>
+<td align="center"><code>$\alpha$ $\beta$</code></td>
+<td align="center"><span class="math inline">\(\alpha\)</span> <span class="math inline">\(\beta\)</span></td>
+<td align="center"><code>$\theta$ $\Theta$</code></td>
+<td align="center"><span class="math inline">\(\theta\)</span> <span class="math inline">\(\Theta\)</span></td>
+</tr>
+<tr class="even">
+<td align="center">Bar</td>
+<td align="center"><code>$\bar{x}$</code></td>
+<td align="center"><span class="math inline">\(\bar{x}\)</span></td>
+<td align="center"><code>$\bar{mu}_i$</code></td>
+<td align="center"><span class="math inline">\(\bar{\mu}_i\)</span></td>
+</tr>
+<tr class="odd">
+<td align="center">Hat</td>
+<td align="center"><code>$\hat{mu}$</code></td>
+<td align="center"><span class="math inline">\(\hat{\mu}\)</span></td>
+<td align="center"><code>$\hat{y}_i$</code></td>
+<td align="center"><span class="math inline">\(\hat{y}_i\)</span></td>
+</tr>
+<tr class="even">
+<td align="center">Star</td>
+<td align="center"><code>$y^*$</code></td>
+<td align="center"><span class="math inline">\(y^*\)</span></td>
+<td align="center"><code>$\hat{\mu}^*_i$</code></td>
+<td align="center"><span class="math inline">\(\hat{\mu}^*_i\)</span></td>
+</tr>
+<tr class="odd">
+<td align="center">Centered Dot</td>
+<td align="center"><code>$\cdot$</code></td>
+<td align="center"><span class="math inline">\(\cdot\)</span></td>
+<td align="center"><code>$\bar{y}_{i\cdot}$</code></td>
+<td align="center"><span class="math inline">\(\bar{y}_{i\cdot}\)</span></td>
+</tr>
+<tr class="even">
+<td align="center">Sum</td>
+<td align="center"><code>$\sum x_i$</code></td>
+<td align="center"><span class="math inline">\(\sum x_i\)</span></td>
+<td align="center"><code>$\sum_{i=0}^N x_i$</code></td>
+<td align="center"><span class="math inline">\(\sum_{i=0}^N x_i\)</span></td>
+</tr>
+<tr class="odd">
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr class="even">
+<td align="center">Square Root</td>
+<td align="center"><code>$\sqrt{a}$</code></td>
+<td align="center"><span class="math inline">\(\sqrt{a}\)</span></td>
+<td align="center"><code>$\sqrt{a^2 + b^2}$</code></td>
+<td align="center"><span class="math inline">\(\sqrt{a^2 + b^2}\)</span></td>
+</tr>
+<tr class="odd">
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+<td align="center"></td>
+</tr>
+<tr class="even">
+<td align="center">Fractions</td>
+<td align="center"><code>$\frac{a}{b}$</code></td>
+<td align="center"><span class="math inline">\(\frac{a}{b}\)</span></td>
+<td align="center"><code>$\frac{x_i - \bar{x}{s/\sqrt{n}$</code></td>
+<td align="center"><span class="math inline">\(\frac{x_i - \bar{x}}{s/\sqrt{n}}\)</span></td>
 </tr>
 </tbody>
-</table></li>
-</ol></li>
-</ol>
+</table>
+<p>Within your RMarkdown document, you can include LaTeX code by enclosing it with dollar signs. So you might write <code>$\alpha=0.05$</code> in your text, but after it is knitted to a pdf, html, or Word, you’ll see <span class="math inline">\(\alpha=0.05\)</span>. If you want your mathematical equation to be on its own line, all by itself, enclose it with double dollar signs. So</p>
+<p><code>$$z_i = \frac{z_i-\bar{x}}{\sigma / \sqrt{n}}$$</code></p>
+<p>would be displayed as</p>
+<p><span class="math display">\[ z_{i}=\frac{x_{i}-\bar{X}}{\sigma/\sqrt{n}} \]</span></p>
+<p>Unfortunately RMarkdown is a little picky about spaces near the $ and $$ signs and you can’t have any spaces between them and the LaTeX command. For a more information about all the different symbols you can use, google ‘LaTeX math symbols’.</p>
+</div>
+<div id="tables" class="section level2">
+<h2><span class="header-section-number">16.2</span> Tables</h2>
+<p>For the following descriptions of the simple, grid, and pipe tables, I’ve shamelessly stolen from the Pandoc documentation. [<a href="http://pandoc.org/README.html#tables" class="uri">http://pandoc.org/README.html#tables</a>]</p>
+<p>One way to print a table is to just print in in R and have the table presented in the code chunk. For example, suppose I want to print out the first 4 rows of the trees dataset.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">data &lt;-<span class="st"> </span>trees[<span class="dv">1</span>:<span class="dv">4</span>, ]
+data</code></pre></div>
+<pre><code>##   Girth Height Volume
+## 1   8.3     70   10.3
+## 2   8.6     65   10.3
+## 3   8.8     63   10.2
+## 4  10.5     72   16.4</code></pre>
+<p>Usually this is sufficient, but suppose you want something a bit nicer because you are generating tables regularly and you don’t want to have to clean them up by hand. Tables in RMarkdown follow the table conventions from the Markdown class with a few minor exceptions. Markdown provides 4 ways to define a table and RMarkdown supports 3 of those.</p>
+<div id="simple-tables" class="section level3">
+<h3><span class="header-section-number">16.2.1</span> Simple Tables</h3>
+<p>Simple tables look like this (Notice I don’t wrap these dollar signs or anything, just a blank line above and below the table):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Right   Left     Center   Default 
+-------<span class="st"> </span>------<span class="st"> </span>----------<span class="st"> </span>-------<span class="st"> </span>
+<span class="st">     </span><span class="dv">12</span> <span class="dv">12</span>        hmmm        <span class="dv">12</span> 
+    <span class="dv">123</span> <span class="dv">123</span>        <span class="dv">123</span>       <span class="dv">123</span> 
+      <span class="dv">1</span> <span class="dv">1</span>            <span class="dv">1</span>         <span class="dv">1</span></code></pre></div>
+<p>and would be rendered like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Right</th>
+<th align="left">Left</th>
+<th align="center">Center</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">12</td>
+<td align="left">12</td>
+<td align="center">hmmm</td>
+<td>12</td>
+</tr>
+<tr class="even">
+<td align="left">123</td>
+<td align="left">123</td>
+<td align="center">123</td>
+<td>123</td>
+</tr>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">1</td>
+<td align="center">1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>The headers and table rows must each fit on one line. Column alignments are determined by the position of the header text relative to the dashed line below it.</p>
+<p>If the dashed line is flush with the header text on the right side but extends beyond it on the left, the column is right-aligned. If the dashed line is flush with the header text on the left side but extends beyond it on the right, the column is left-aligned. If the dashed line extends beyond the header text on both sides, the column is centered. If the dashed line is flush with the header text on both sides, the default alignment is used (in most cases, this will be left). The table must end with a blank line, or a line of dashes followed by a blank line.</p>
+</div>
+<div id="grid-tables" class="section level3">
+<h3><span class="header-section-number">16.2.2</span> Grid Tables</h3>
+<p>Grid tables are a little more flexible and each cell can take an arbitrary Markdown block elements (such as lists).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">+---------------+---------------+--------------------+
+<span class="er">|</span><span class="st"> </span>Fruit         |<span class="st"> </span>Price         |<span class="st"> </span>Advantages         |
++<span class="er">===============</span>+<span class="er">===============</span>+<span class="er">====================</span>+
+<span class="er">|</span><span class="st"> </span>Bananas       |<span class="st"> </span><span class="er">$</span><span class="fl">1.34</span>         |<span class="st"> </span>-<span class="st"> </span>built-in wrapper |
+<span class="er">|</span><span class="st">               </span><span class="er">|</span><span class="st">               </span><span class="er">|</span><span class="st"> </span>-<span class="st"> </span>bright color     |
++---------------+---------------+--------------------+
+<span class="er">|</span><span class="st"> </span>Oranges       |<span class="st"> </span><span class="er">$</span><span class="fl">2.10</span>         |<span class="st"> </span>-<span class="st"> </span>cures scurvy     |
+<span class="er">|</span><span class="st">               </span><span class="er">|</span><span class="st">               </span><span class="er">|</span><span class="st"> </span>-<span class="st"> </span>tasty            |
++---------------+---------------+--------------------+</code></pre></div>
+<p>which is rendered as the following:</p>
+<table style="width:74%;">
+<colgroup>
+<col width="22%" />
+<col width="22%" />
+<col width="29%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Fruit</th>
+<th>Price</th>
+<th>Advantages</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><p>Bananas</p></td>
+<td><p>$1.34</p></td>
+<td><ul>
+<li>built-in wrapper</li>
+<li>bright color</li>
+</ul></td>
+</tr>
+<tr class="even">
+<td><p>Oranges</p></td>
+<td><p>$2.10</p></td>
+<td><ul>
+<li>cures scurvy</li>
+<li>tasty</li>
+</ul></td>
+</tr>
+</tbody>
+</table>
+<p>Grid table doesn’t support Left/Center/Right alignment. Both Simple tables and Grid tables require you to format the blocks nicely inside the RMarkdown file and that can be a bit annoying if something changes and you have to fix the spacing in the rest of the table. Both Simple and Grid tables don’t require column headers.</p>
+</div>
+<div id="pipe-tables" class="section level3">
+<h3><span class="header-section-number">16.2.3</span> Pipe Tables</h3>
+<p>Pipe tables look quite simimlar to grid tables but Markdown isn’t as picky about the pipes lining up. However, it does require a header row (which you could leave the elements blank in).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">|<span class="st"> </span>Right |<span class="st"> </span>Left |<span class="st"> </span>Default |<span class="st"> </span>Center |
+<span class="er">|</span>------<span class="er">:|:</span>-----<span class="er">|</span>---------<span class="er">|:</span>------<span class="er">:|</span>
+<span class="er">|</span><span class="st">   </span><span class="dv">12</span>  |<span class="st">  </span><span class="dv">12</span>  |<span class="st">    </span><span class="dv">12</span>   |<span class="st">    </span><span class="dv">12</span>  |
+<span class="er">|</span><span class="st">  </span><span class="dv">123</span>  |<span class="st">  </span><span class="dv">123</span> |<span class="st">   </span><span class="dv">123</span>   |<span class="st">   </span><span class="dv">123</span>  |
+<span class="er">|</span><span class="st">    </span><span class="dv">1</span>  |<span class="st">    </span><span class="dv">1</span> |<span class="st">     </span><span class="dv">1</span>   |<span class="st">     </span><span class="dv">1</span>  |</code></pre></div>
+<p>which will render as the following:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Right</th>
+<th align="left">Left</th>
+<th>Default</th>
+<th align="center">Center</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">12</td>
+<td align="left">12</td>
+<td>12</td>
+<td align="center">12</td>
+</tr>
+<tr class="even">
+<td align="right">123</td>
+<td align="left">123</td>
+<td>123</td>
+<td align="center">123</td>
+</tr>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left">1</td>
+<td>1</td>
+<td align="center">1</td>
+</tr>
+</tbody>
+</table>
+<p>In general I prefer to use the pipe tables because it seems a little less picky about getting everything correct. However it is still pretty annoying to get the table laid out correctly.</p>
+<p>In all of these tables, you can use the regular RMarkdown formating tricks for italicising and bolding. So I could have a table such as the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">|<span class="st">   </span>Source    |<span class="st">  </span>df  |<span class="st">   </span>Sum of Sq   |<span class="st">    </span>Mean Sq    |<span class="st">    </span>F   |<span class="st">  </span><span class="er">$</span><span class="kw">Pr</span>(&gt;F_{<span class="dv">1</span>,<span class="dv">29</span>})$<span class="st">    </span><span class="er">|</span>
+<span class="er">|:</span>------------<span class="er">|</span>-----<span class="er">:|</span>--------------<span class="er">:|</span>--------------<span class="er">:|</span>-------<span class="er">:|</span>--------------------<span class="er">:|</span>
+<span class="er">|</span><span class="st">  </span>Girth      |<span class="st">  </span><span class="er">*</span><span class="dv">1</span>*<span class="st"> </span><span class="er">|</span><span class="st">  </span><span class="fl">7581.8</span>       |<span class="st">  </span><span class="fl">7581.8</span>       |<span class="st"> </span><span class="fl">419.26</span> |<span class="st">  </span><span class="er">**&lt;</span><span class="st"> </span><span class="fl">2.2e-16</span>**<span class="st">      </span><span class="er">|</span>
+<span class="er">|</span><span class="st">  </span>Residual   |<span class="st">  </span><span class="dv">29</span>  |<span class="st">  </span><span class="fl">524.3</span>        |<span class="st">   </span><span class="fl">18.1</span>        |<span class="st">        </span><span class="er">|</span><span class="st">                     </span><span class="er">|</span></code></pre></div>
+<p>and have it look like this:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Source</th>
+<th align="right">df</th>
+<th align="right">Sum of Sq</th>
+<th align="right">Mean Sq</th>
+<th align="right">F</th>
+<th align="right"><span class="math inline">\(Pr(&gt;F_{1,29})\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Girth</td>
+<td align="right"><em>1</em></td>
+<td align="right">7581.8</td>
+<td align="right">7581.8</td>
+<td align="right">419.26</td>
+<td align="right"><strong>&lt; 2.2e-16</strong></td>
+</tr>
+<tr class="even">
+<td align="left">Residual</td>
+<td align="right">29</td>
+<td align="right">524.3</td>
+<td align="right">18.1</td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+</tbody>
+</table>
+<p>The problem with all of this is that I don’t want to create these by hand. Instead I would like functions that take a data frame or matrix and spit out the RMarkdown code for the table.</p>
+</div>
+</div>
+<div id="r-functions-to-produce-table-code." class="section level2">
+<h2><span class="header-section-number">16.3</span> R functions to produce table code.</h2>
+<p>There are a couple of different packages that convert a data frame to simple/grid/pipe table. We will explore a couple of these, starting with the most basic and moving to the more complicated. The general idea is that we’ll produce the appropriate simple/grid/pipe table syntax in R, and when it gets knitted, then RMarkdown will turn our simple/grid/pipe table into something pretty.</p>
+<div id="knitrkable" class="section level3">
+<h3><span class="header-section-number">16.3.1</span> <code>knitr::kable</code></h3>
+<p>The <code>knitr</code> package includes a function that produces simple tables. It doesn’t have much customizability, but it gets the job done.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># in this code chunk, I&#39;ve used the &quot;results=&#39;hold&#39;&quot; option to prevent</span>
+<span class="co"># the RMarkdown processor from turning this into something pretty</span>
+knitr::<span class="kw">kable</span>( data )</code></pre></div>
+<pre><code>## 
+## 
+##  Girth   Height   Volume
+## ------  -------  -------
+##    8.3       70     10.3
+##    8.6       65     10.3
+##    8.8       63     10.2
+##   10.5       72     16.4</code></pre>
+<p>which, if I don’t prevent the RMarkdown processor from doing its job, will get rendered as such:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr::<span class="kw">kable</span>( data )</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Girth</th>
+<th align="right">Height</th>
+<th align="right">Volume</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">8.3</td>
+<td align="right">70</td>
+<td align="right">10.3</td>
+</tr>
+<tr class="even">
+<td align="right">8.6</td>
+<td align="right">65</td>
+<td align="right">10.3</td>
+</tr>
+<tr class="odd">
+<td align="right">8.8</td>
+<td align="right">63</td>
+<td align="right">10.2</td>
+</tr>
+<tr class="even">
+<td align="right">10.5</td>
+<td align="right">72</td>
+<td align="right">16.4</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="package-pander" class="section level3">
+<h3><span class="header-section-number">16.3.2</span> Package <code>pander</code></h3>
+<p>The package <code>pander</code> seems to be a nice compromise between customization and not having to learn too much. It is relatively powerful in that it will take <code>summary()</code> and <code>anova()</code> output and produce tables for them. By default <code>pander</code> will produce simple tables, but you can ask for Grid or Pipe tables.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(pander)
+<span class="kw">pander</span>( data, <span class="dt">style=</span><span class="st">&#39;rmarkdown&#39;</span> )   <span class="co"># style is pipe tables...</span></code></pre></div>
+<pre><code>## 
+## 
+## |  Girth  |  Height  |  Volume  |
+## |:-------:|:--------:|:--------:|
+## |   8.3   |    70    |   10.3   |
+## |   8.6   |    65    |   10.3   |
+## |   8.8   |    63    |   10.2   |
+## |  10.5   |    72    |   16.4   |</code></pre>
+<p>The <code>pander</code> package deals with summary and anova tables from a variety of different analyses. So you can simply ask for a nice looking version using the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">lm</span>( Volume ~<span class="st"> </span>Girth, <span class="dt">data=</span>trees )    <span class="co"># a simple regression</span>
+<span class="kw">pander</span>( <span class="kw">summary</span>(model) )    <span class="co"># my usual summary table</span></code></pre></div>
+<table style="width:86%;">
+<colgroup>
+<col width="25%" />
+<col width="15%" />
+<col width="18%" />
+<col width="13%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Estimate</th>
+<th align="center">Std. Error</th>
+<th align="center">t value</th>
+<th align="center">Pr(&gt;|t|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>Girth</strong></td>
+<td align="center">5.066</td>
+<td align="center">0.2474</td>
+<td align="center">20.48</td>
+<td align="center">8.644e-19</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">-36.94</td>
+<td align="center">3.365</td>
+<td align="center">-10.98</td>
+<td align="center">7.621e-12</td>
+</tr>
+</tbody>
+</table>
+<table style="width:85%;">
+<caption>Fitting linear model: Volume ~ Girth</caption>
+<colgroup>
+<col width="20%" />
+<col width="30%" />
+<col width="11%" />
+<col width="22%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Observations</th>
+<th align="center">Residual Std. Error</th>
+<th align="center"><span class="math inline">\(R^2\)</span></th>
+<th align="center">Adjusted <span class="math inline">\(R^2\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">31</td>
+<td align="center">4.252</td>
+<td align="center">0.9353</td>
+<td align="center">0.9331</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">pander</span>( <span class="kw">anova</span>( model ) )    <span class="co"># my usual anova table</span></code></pre></div>
+<table style="width:83%;">
+<caption>Analysis of Variance Table</caption>
+<colgroup>
+<col width="22%" />
+<col width="6%" />
+<col width="12%" />
+<col width="13%" />
+<col width="13%" />
+<col width="13%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Df</th>
+<th align="center">Sum Sq</th>
+<th align="center">Mean Sq</th>
+<th align="center">F value</th>
+<th align="center">Pr(&gt;F)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>Girth</strong></td>
+<td align="center">1</td>
+<td align="center">7582</td>
+<td align="center">7582</td>
+<td align="center">419.4</td>
+<td align="center">8.644e-19</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>Residuals</strong></td>
+<td align="center">29</td>
+<td align="center">524.3</td>
+<td align="center">18.08</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 </div>
+</div>
+
+
+
+
+
+
+
+
+
             </section>
 
           </div>
         </div>
       </div>
-<a href="8-data-manipulation.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="10-graphing-using-ggplot2.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+<a href="15-dates-and-times.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
 
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
@@ -420,7 +796,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/09_DataReshaping.Rmd",
+"link": "https://github.com/dereksonderegger/STA_570L_Book/raw/master/20_RMarkdownTricks.Rmd",
 "text": null
 },
 "download": null,
