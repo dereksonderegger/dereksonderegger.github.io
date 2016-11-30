@@ -38,8 +38,8 @@ MathJax.Hub.Config({
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   
   
-<link rel="prev" href="7-variable-selection.html">
-<link rel="next" href="9-two-way-anova.html">
+<link rel="prev" href="12-binomial-regression.html">
+
 
 <script src="libs/jquery-2.2.3/jquery.min.js"></script>
 <link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
@@ -265,153 +265,154 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
           <div class="page-inner">
 
             <section class="normal" id="section-">
-<div id="one-way-anova" class="section level1">
-<h1><span class="header-section-number">Chapter 8</span> One way ANOVA</h1>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Load the libraries I&#39;ll use</span>
+<div id="a-brief-introduction-to-time-series" class="section level1">
+<h1><span class="header-section-number">Chapter 13</span> A Brief Introduction to Time Series</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Usual library loading stuff</span>
+<span class="kw">library</span>(multcomp); <span class="kw">library</span>(multcompView)
+<span class="kw">library</span>(lsmeans)
+<span class="kw">library</span>(MASS)
 <span class="kw">library</span>(faraway)
 <span class="kw">library</span>(ggplot2)
 <span class="kw">library</span>(dplyr)
-<span class="kw">library</span>(multcompView)</code></pre></div>
-<p>Given a categorical covariate (which I will call a factor) with <span class="math inline">\(I\)</span> levels, we are interested in fitting the model <span class="math display">\[y_{ij}=\mu+\tau_{i}+\epsilon_{ij}\]</span> where <span class="math inline">\(\epsilon_{ij}\stackrel{iid}{\sim}N\left(0,\sigma^{2}\right)\)</span>, <span class="math inline">\(\mu\)</span> is the overall mean, and <span class="math inline">\(\tau_{i}\)</span> are the offset of factor level <span class="math inline">\(i\)</span> from <span class="math inline">\(\mu\)</span>. Unfortunately this model is not identifiable because I could add a constant (say <span class="math inline">\(5\)</span>) to <span class="math inline">\(\mu\)</span> and subtract that same constant from each of the <span class="math inline">\(\tau_{i}\)</span> values and the group mean <span class="math inline">\(\mu+\tau_{i}\)</span> would not change. There are two easy restrictions we could make to make the model identifiable:</p>
-<ol style="list-style-type: decimal">
-<li><p>Set <span class="math inline">\(\mu=0\)</span>. In this case, <span class="math inline">\(\tau_{i}\)</span> represents the expected value of an observation in group level <span class="math inline">\(i\)</span>. We call this the “cell means” representation.</p></li>
-<li><p>Set <span class="math inline">\(\tau_{1}=0\)</span>. Then <span class="math inline">\(\mu\)</span> represents the expected value of treatment <span class="math inline">\(1\)</span>, and the <span class="math inline">\(\tau_{i}\)</span> values will represent the offsets from group 1. The group or level that we set to be zero is then referred to as the reference group. We can call this the “offset from reference” model.</p></li>
-</ol>
-<p>We will be interested in testing the null and alternative hypotheses <span class="math display">\[\begin{aligned}
-H_{0}:\;\;y_{ij}    &amp;=  \mu+\epsilon_{ij}              \\
-H_{a}:\;\;y_{ij}    =   \mu+\alpha_{i}+\epsilon_{ij}
-\end{aligned}\]</span></p>
-<div id="an-example" class="section level2">
-<h2><span class="header-section-number">8.1</span> An Example</h2>
-<p>We look at a dataset that comes from the study of blood coagulation times: 24 animals were randomly assigned to four different diets and the samples were taken in a random order. The diets are denoted as <span class="math inline">\(A\)</span>,<span class="math inline">\(B\)</span>,<span class="math inline">\(C\)</span>,and <span class="math inline">\(D\)</span> and the response of interest is the amount of time it takes for the blood to coagulate.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(coagulation)
-<span class="kw">ggplot</span>(coagulation, <span class="kw">aes</span>(<span class="dt">x=</span>diet, <span class="dt">y=</span>coag)) +<span class="st"> </span>
-<span class="st">    </span><span class="kw">geom_boxplot</span>() +
-<span class="st">    </span><span class="kw">labs</span>( <span class="dt">x=</span><span class="st">&#39;Diet&#39;</span>, <span class="dt">y=</span><span class="st">&#39;Coagulation Time&#39;</span> )</code></pre></div>
-<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-132-1.png" width="672" /></p>
-<p>Just by looking at the graph, we expect to see that diets <span class="math inline">\(A\)</span> and <span class="math inline">\(D\)</span> are similar while <span class="math inline">\(B\)</span> and <span class="math inline">\(C\)</span> are different from <span class="math inline">\(A\)</span> and <span class="math inline">\(D\)</span> and possibly from each other, too. We first fit the offset model.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m &lt;-<span class="st"> </span><span class="kw">lm</span>(coag ~<span class="st"> </span>diet, <span class="dt">data=</span>coagulation)
-<span class="kw">summary</span>(m)</code></pre></div>
+<span class="kw">library</span>(lubridate)</code></pre></div>
+<div id="trend-seasonality" class="section level2">
+<h2><span class="header-section-number">13.1</span> Trend + Seasonality</h2>
+<p>Often we just want a way to model trends on two (or more) time scales.</p>
+<p>Consider the CO2 data from</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(co2)
+CO2 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(
+  <span class="dt">value =</span> <span class="kw">as.vector</span>(co2),
+  <span class="dt">year  =</span> <span class="kw">rep</span>(<span class="dv">1959</span>:<span class="dv">1997</span>, <span class="dt">each=</span><span class="dv">12</span>),
+  <span class="dt">month =</span> <span class="kw">rep</span>(<span class="dv">1</span>:<span class="dv">12</span>, <span class="dt">times=</span><span class="dv">39</span>)) 
+CO2 &lt;-<span class="st"> </span>CO2 %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>( <span class="dt">time =</span> <span class="kw">ymd</span>(<span class="kw">paste</span>(year, month, <span class="dv">1</span>)) )
+  
+<span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>)</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-277-1.png" width="672" /></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Zoom in on a couple of years</span>
+<span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="kw">scale_x_datetime</span>(<span class="dt">limits=</span><span class="kw">ymd</span>(<span class="st">&#39;1980-1-1&#39;</span>, <span class="st">&#39;1982-12-31&#39;</span>))</code></pre></div>
+<pre><code>## Warning: Removed 432 rows containing missing values (geom_point).</code></pre>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-278-1.png" width="672" /></p>
+<p>So how do we fit the seasonal trend?</p>
+<p>We want a curve that looks something like a combination of these:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, <span class="dv">2</span>*pi, <span class="dt">by=</span>.<span class="dv">01</span>)
+foo &lt;-<span class="st"> </span><span class="kw">rbind</span>(
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;sine&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">sin</span>(x)),
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;cosine&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">cos</span>(x)))
+<span class="kw">ggplot</span>(foo, <span class="kw">aes</span>(<span class="dt">x=</span>x, <span class="dt">y=</span>y, <span class="dt">color=</span>curve)) +
+<span class="st">  </span><span class="kw">geom_line</span>()</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-279-1.png" width="672" /></p>
+<p>But I also want to be able to have the curve span across the months, not just from 0 to <span class="math inline">\(2*\pi=6.28\)</span></p>
+<p>So lets add a term for the fact that we want these to run from 0 to 12.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">w &lt;-<span class="st"> </span><span class="dv">12</span>
+x &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, w, <span class="dt">by=</span>.<span class="dv">01</span>); 
+foo &lt;-<span class="st"> </span><span class="kw">rbind</span>(
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;sine&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">sin</span>(<span class="dv">2</span>*pi*x/w)),
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;cosine&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">cos</span>(<span class="dv">2</span>*pi*x/w)))
+<span class="kw">ggplot</span>(foo, <span class="kw">aes</span>(<span class="dt">x=</span>x, <span class="dt">y=</span>y, <span class="dt">color=</span>curve)) +
+<span class="st">  </span><span class="kw">geom_line</span>()</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-280-1.png" width="672" /></p>
+<p>So we think that <span class="math display">\[\cos\left(2\pi* \frac{x}{\omega}\right)\]</span> and <span class="math display">\[\sin\left(2\pi * \frac{x}{\omega}\right)\]</span> would be a useful set of functions for modeling this seasonal trend.</p>
+<p>But these functions are just transformations of <span class="math inline">\(x\)</span> just as <span class="math inline">\(x^2\)</span> and <span class="math inline">\(x^3\)</span> were. So lets just do another transformation.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">lm</span>( value ~<span class="st"> </span>year +<span class="st"> </span>
+<span class="st">               </span><span class="kw">sin</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>) +<span class="st"> </span>
+<span class="st">               </span><span class="kw">cos</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>), 
+             <span class="dt">data=</span>CO2)
+
+CO2 &lt;-<span class="st"> </span>CO2 %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>( <span class="dt">fit =</span> <span class="kw">predict</span>(model) )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="co">#scale_x_datetime(limits=ymd(&#39;1980-1-1&#39;, &#39;1982-12-31&#39;)) +</span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y=</span>fit), <span class="dt">color=</span><span class="st">&#39;red&#39;</span>)</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-282-1.png" width="672" /></p>
+<p>This isn’t too bad, but the long term trend is off. Lets add a squared term onto the year.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">lm</span>( value ~<span class="st"> </span><span class="kw">poly</span>(year, <span class="dv">2</span>) +
+<span class="st">               </span><span class="kw">sin</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>) +<span class="st"> </span>
+<span class="st">               </span><span class="kw">cos</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>), 
+             <span class="dt">data=</span>CO2)
+
+CO2 &lt;-<span class="st"> </span>CO2 %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>( <span class="dt">fit =</span> <span class="kw">predict</span>(model) )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="co">#scale_x_datetime(limits=ymd(&#39;1980-1-1&#39;, &#39;1982-12-31&#39;)) +</span>
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y=</span>fit), <span class="dt">color=</span><span class="st">&#39;red&#39;</span>)</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-284-1.png" width="672" /></p>
+<p>That fits the long term trend better, now lets zoom in on just a couple of years:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="kw">scale_x_datetime</span>(<span class="dt">limits=</span><span class="kw">ymd</span>(<span class="st">&#39;1980-1-1&#39;</span>, <span class="st">&#39;1982-12-31&#39;</span>)) +
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y=</span>fit), <span class="dt">color=</span><span class="st">&#39;red&#39;</span>)</code></pre></div>
+<pre><code>## Warning: Removed 432 rows containing missing values (geom_point).</code></pre>
+<pre><code>## Warning: Removed 432 rows containing missing values (geom_path).</code></pre>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-285-1.png" width="672" /></p>
+<p>We are missing the troughs a bit. Almost like my model isn’t quite flexible enough. So just as we added more powers for the polynomials <span class="math inline">\(x^3, x^4, \dots\)</span> we can add flexibility to these by adding higher frequency sine and cosine curves.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">w &lt;-<span class="st"> </span><span class="dv">12</span>
+x &lt;-<span class="st"> </span><span class="kw">seq</span>(<span class="dv">0</span>, w, <span class="dt">by=</span>.<span class="dv">01</span>); 
+foo &lt;-<span class="st"> </span><span class="kw">rbind</span>(
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span>  <span class="st">&#39;sine&#39;</span> , <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">sin</span>(<span class="dv">2</span>*pi*x/w)),
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;cosine&#39;</span> , <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">cos</span>(<span class="dv">2</span>*pi*x/w)),
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span>  <span class="st">&#39;sine2&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">sin</span>(<span class="dv">2</span>*pi*x/w*<span class="dv">2</span>)),
+  <span class="kw">data.frame</span>(<span class="dt">curve=</span><span class="st">&#39;cosine2&#39;</span>, <span class="dt">x=</span>x) %&gt;%<span class="st"> </span><span class="kw">mutate</span>(<span class="dt">y=</span><span class="kw">cos</span>(<span class="dv">2</span>*pi*x/w*<span class="dv">2</span>))
+  )
+<span class="kw">ggplot</span>(foo, <span class="kw">aes</span>(<span class="dt">x=</span>x, <span class="dt">y=</span>y, <span class="dt">color=</span>curve)) +
+<span class="st">  </span><span class="kw">geom_line</span>()</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-286-1.png" width="672" /></p>
+<p>Now we fit a model with a with a polynomial that describes the long-term trends and a bunch of functions of sine and cosine that models the with-in year seasonality.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">lm</span>( value ~<span class="st"> </span><span class="kw">poly</span>(year,<span class="dv">2</span>) +<span class="st"> </span>
+<span class="st">               </span><span class="kw">sin</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>) +<span class="st"> </span>
+<span class="st">               </span><span class="kw">cos</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span>) +
+<span class="st">               </span><span class="kw">sin</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span> *<span class="st"> </span><span class="dv">2</span>) +
+<span class="st">               </span><span class="kw">cos</span>(<span class="dv">2</span>*pi*month/<span class="dv">12</span> *<span class="st"> </span><span class="dv">2</span>), 
+             <span class="dt">data=</span>CO2)
+
+CO2 &lt;-<span class="st"> </span>CO2 %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>( <span class="dt">fit =</span> <span class="kw">predict</span>(model) )</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Zoom in on a couple of years</span>
+<span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="kw">scale_x_datetime</span>(<span class="dt">limits=</span><span class="kw">ymd</span>(<span class="st">&#39;1980-1-1&#39;</span>, <span class="st">&#39;1982-12-31&#39;</span>)) +
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y=</span>fit), <span class="dt">color=</span><span class="st">&#39;red&#39;</span>)</code></pre></div>
+<pre><code>## Warning: Removed 432 rows containing missing values (geom_point).</code></pre>
+<pre><code>## Warning: Removed 432 rows containing missing values (geom_path).</code></pre>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-288-1.png" width="672" /></p>
+<p>The sine and cosine bits are part of something that generalizes curve fitting to allow very flexible types of curves. For time-series the sine and cosine family of <em>basis</em> functions is quite handy but require a bunch of technical fiddling to just use as we have done here.</p>
+<p>Most of the packages that we might use while doing time-series analysis will allow you just specify to fit a smooth curve to the Months.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(mgcv)</code></pre></div>
+<pre><code>## Warning: package &#39;mgcv&#39; was built under R version 3.2.4</code></pre>
+<pre><code>## Loading required package: nlme</code></pre>
+<pre><code>## Warning: package &#39;nlme&#39; was built under R version 3.2.4</code></pre>
 <pre><code>## 
-## Call:
-## lm(formula = coag ~ diet, data = coagulation)
+## Attaching package: &#39;nlme&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:lme4&#39;:
 ## 
-## Residuals:
-##    Min     1Q Median     3Q    Max 
-##  -5.00  -1.25   0.00   1.25   5.00 
+##     lmList</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
 ## 
-## Coefficients:
-##              Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept) 6.100e+01  1.183e+00  51.554  &lt; 2e-16 ***
-## dietB       5.000e+00  1.528e+00   3.273 0.003803 ** 
-## dietC       7.000e+00  1.528e+00   4.583 0.000181 ***
-## dietD       2.991e-15  1.449e+00   0.000 1.000000    
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 2.366 on 20 degrees of freedom
-## Multiple R-squared:  0.6706, Adjusted R-squared:  0.6212 
-## F-statistic: 13.57 on 3 and 20 DF,  p-value: 4.658e-05</code></pre>
-<p>Notice that diet <span class="math inline">\(A\)</span> is the reference level and it has a mean of <span class="math inline">\(61\)</span>. Diet <span class="math inline">\(B\)</span> has an offset from <span class="math inline">\(A\)</span> of <span class="math inline">\(5\)</span>, etc. From the very small F-statistic, we conclude that simple model <span class="math display">\[y_{ij}=\mu+\epsilon_{ij}\]</span> is not sufficient to describe the data.</p>
-</div>
-<div id="degrees-of-freedom" class="section level2">
-<h2><span class="header-section-number">8.2</span> Degrees of Freedom</h2>
-<p>Throughout the previous example, the degrees of freedom that are reported keeps changed depending on what models we are comparing. The simple model we are considering is <span class="math display">\[y_{ij}\sim\mu+\epsilon_{ij}\]</span> which has 1 parameter that defines the expected value versus <span class="math display">\[y_{ij}\sim\mu+\tau_{i}+\epsilon_{ij}\]</span> where there really are only <span class="math inline">\(4\)</span> parameters that define the expected value because <span class="math inline">\(\tau_{1}=0\)</span>. In general, the larger model is only adding <span class="math inline">\(I-1\)</span> terms to the model where <span class="math inline">\(I\)</span> is the number of levels of the factor of interest.</p>
-</div>
-<div id="diagnostics" class="section level2">
-<h2><span class="header-section-number">8.3</span> Diagnostics</h2>
-<p>It is still important to check the diagnostics plots, but certain diagnostic plots will be useless. In particular, we need to be concerned about constant variance among the groups and normality of the residuals.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ggfortify)
-m &lt;-<span class="st"> </span><span class="kw">lm</span>(coag ~<span class="st"> </span>diet, <span class="dt">data=</span>coagulation)
-<span class="kw">autoplot</span>(m, <span class="dt">which=</span><span class="dv">2</span>)  <span class="co">#  QQ plot</span></code></pre></div>
-<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-134-1.png" width="672" /></p>
-<p>The residual plots however, might need a little bit of extra work, because there are only four possible predicted values (actually <span class="math inline">\(3\)</span> because group <span class="math inline">\(A\)</span> and <span class="math inline">\(D\)</span> have the same predicted values). Note that we actually have <span class="math inline">\(n=24\)</span> observations, but I can only see 16 of them.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(m, <span class="dt">which=</span><span class="dv">1</span>)  <span class="co">#  Residals vs fitted</span></code></pre></div>
-<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-135-1.png" width="672" /></p>
-<p>To remedy this, we will plot the residuals vs fitted by hand, and add a little bit of random noise to the fitted value, just so that we don’t have points stack up on top of each other. Lets also add a different shape for each diet.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">coagulation$fitted &lt;-<span class="st"> </span><span class="kw">predict</span>(m)
-coagulation$resid &lt;-<span class="st"> </span><span class="kw">resid</span>(m)
-<span class="kw">ggplot</span>(coagulation, <span class="kw">aes</span>(<span class="dt">x=</span>fitted, <span class="dt">y=</span>resid, <span class="dt">shape=</span>diet, <span class="dt">color=</span>diet)) +
-<span class="st">  </span><span class="kw">geom_point</span>(<span class="dt">position=</span><span class="kw">position_jitter</span>(<span class="dt">w=</span><span class="fl">0.3</span>, <span class="dt">h=</span><span class="dv">0</span>))</code></pre></div>
-<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-136-1.png" width="672" /></p>
-</div>
-<div id="pairwise-comparisons" class="section level2">
-<h2><span class="header-section-number">8.4</span> Pairwise Comparisons</h2>
-<p>After detecting differences in the factor levels, we are often interested in which factor levels are different from which. Often we are interested in comparing the mean of level <span class="math inline">\(i\)</span> with the mean of level <span class="math inline">\(j\)</span>. As usual we let the vector of parameter estimates be <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span> then the contrast of interested can be written as <span class="math display">\[\boldsymbol{c}^{T}\hat{\boldsymbol{\beta}}\pm t_{n-p}^{1-\alpha/2}\;\hat{\sigma}\sqrt{\boldsymbol{c}^{T}\left(\boldsymbol{X}^{T}\boldsymbol{X}\right)^{-1}\boldsymbol{c}}\]</span> for some vector <span class="math inline">\(\boldsymbol{c}\)</span>.</p>
-<p>Unfortunately this interval does not take into account the multiple comparisons issue (i.e. we are making <span class="math inline">\(I(I-1)/2\)</span> contrasts if our factor has <span class="math inline">\(I\)</span> levels). To account for this, we will not use a quantile from a t-distribution, but from Tukey’s studentized range distribution <span class="math inline">\(q_{n,n-I}\)</span> divided by <span class="math inline">\(\sqrt{2}\)</span>. The intervals we will use are: <span class="math display">\[\boldsymbol{c}^{T}\hat{\boldsymbol{\beta}}\pm\frac{q_{n,n-I}^{1-\alpha/2}}{\sqrt{2}}\;\hat{\sigma}\sqrt{\boldsymbol{c}^{T}\left(\boldsymbol{X}^{T}\boldsymbol{X}\right)^{-1}\boldsymbol{c}}\]</span></p>
-<p>There are several ways to make R calculate this interval (See the contrasts chapter for a more general treatment of this.), but the easiest is to use <code>TukeyHSD()</code>. This function will calculate all of these pairwise intervals using the above formula, which is commonly known as Tukey’s Honestly Significant Differences. This function expects to receive output from the aov() function. The aov() is similar to lm() but does not accept continuous covariates in the model. Because it is possible to convert a <code>lm</code> output object to an <code>aov</code> object, I typically will do the following</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m &lt;-<span class="st"> </span><span class="kw">lm</span>(coag ~<span class="st"> </span>diet, <span class="dt">data=</span>coagulation)   <span class="co"># use the lm() function as usual</span>
-Pvalues &lt;-<span class="st"> </span><span class="kw">TukeyHSD</span>( <span class="kw">aov</span>(m), <span class="dt">level=</span>.<span class="dv">90</span> ) <span class="co"># convert to the format that TukeyHSD likes...</span>
-Pvalues</code></pre></div>
-<pre><code>##   Tukey multiple comparisons of means
-##     95% family-wise confidence level
-## 
-## Fit: aov(formula = m)
-## 
-## $diet
-##     diff         lwr       upr     p adj
-## B-A    5   0.7245544  9.275446 0.0183283
-## C-A    7   2.7245544 11.275446 0.0009577
-## D-A    0  -4.0560438  4.056044 1.0000000
-## C-B    2  -1.8240748  5.824075 0.4766005
-## D-B   -5  -8.5770944 -1.422906 0.0044114
-## D-C   -7 -10.5770944 -3.422906 0.0001268</code></pre>
-<p>Here we see that diets <span class="math inline">\(A\)</span> and <span class="math inline">\(D\)</span> are similar to each other, but different than <span class="math inline">\(B\)</span> and <span class="math inline">\(C\)</span> and that <span class="math inline">\(B\)</span> and <span class="math inline">\(C\)</span> are not statistically different from each other at the <span class="math inline">\(0.10\)</span> level.</p>
-<div id="presentation-of-results" class="section level3">
-<h3><span class="header-section-number">8.4.1</span> Presentation of Results</h3>
-<p>The display of <code>TukeyHSD</code> is pretty annoying and often I want to turn the vector of adjusted p-values into a matrix of p-values. We want a matrix that is <span class="math inline">\(p \times p\)</span>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Convert to a matrix of adjusted p-values</span>
-Pmatrix &lt;-<span class="st"> </span><span class="kw">vec2mat</span>( Pvalues$diet[, <span class="st">&#39;p adj&#39;</span>] )
-Pmatrix</code></pre></div>
-<pre><code>##             B            C            D            A
-## B 1.000000000 0.4766005178 0.0044113688 0.0183282757
-## C 0.476600518 1.0000000000 0.0001267866 0.0009576856
-## D 0.004411369 0.0001267866 1.0000000000 1.0000000000
-## A 0.018328276 0.0009576856 1.0000000000 1.0000000000</code></pre>
-<p>From this matrix of adjusted p-values, there are many functions that will be helpful. One very common thing is to use a lettering scheme that indicates which groups are different. So if two groups share a letter, they are not significantly different.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">multcompLetters</span>(Pmatrix)</code></pre></div>
-<pre><code>##   B   C   D   A 
-## &quot;a&quot; &quot;a&quot; &quot;b&quot; &quot;b&quot;</code></pre>
-<p>To make our lives easier while making graphs, we <em>really</em> want to be able to add these back into our original data frame. Unfortunately the <code>multcompView</code> package that does this doesn’t really make it easy to do this. So I wrote us a little function that will suffice:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#&#39; Create a data frame with significant groupings </span>
-<span class="co">#&#39;</span>
-<span class="co">#&#39; This function runs TukeyHSD on the input model and then creates a data frame</span>
-<span class="co">#&#39; with a column for the factor and a second for the Significance Group</span>
-<span class="co">#&#39; </span>
-<span class="co">#&#39; @param model The output of a lm() or aov() call that can be coerced to an aov object.</span>
-<span class="co">#&#39; @param variable The variable of interest.</span>
-<span class="co">#&#39; @output A data frame with a column for factor and another for the signicance group.</span>
-make_TukeyHSD_letters &lt;-<span class="st"> </span>function(model, variable){ 
-  Tukey &lt;-<span class="st"> </span><span class="kw">TukeyHSD</span>(<span class="kw">aov</span>(model))[[variable]]
-  temp &lt;-<span class="st"> </span>Tukey[,<span class="st">&#39;p adj&#39;</span>] %&gt;%
-<span class="st">    </span><span class="kw">vec2mat</span>() %&gt;%
-<span class="st">    </span><span class="kw">multcompLetters</span>()
-  out &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">group =</span> <span class="kw">names</span>(temp$Letters), <span class="dt">SigGroup=</span>temp$Letters)
-  <span class="kw">colnames</span>(out)[<span class="dv">1</span>] &lt;-<span class="st"> </span>variable
-  out
-}  </code></pre></div>
-<p>Now that the function is defined, we can happily use it.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">make_TukeyHSD_letters</span>(m, <span class="st">&#39;diet&#39;</span>) </code></pre></div>
-<pre><code>##   diet SigGroup
-## B    B        a
-## C    C        a
-## D    D        b
-## A    A        b</code></pre>
-<p>This is useful, but it will be more useful when I merge this small data frame with the original data and then each observation will have an associated significance group.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">coagulation &lt;-<span class="st"> </span>coagulation %&gt;%
-<span class="st">  </span><span class="kw">left_join</span>( <span class="kw">make_TukeyHSD_letters</span>(m, <span class="st">&#39;diet&#39;</span>) )</code></pre></div>
-<pre><code>## Joining, by = &quot;diet&quot;</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">ggplot</span>(coagulation, <span class="kw">aes</span>(<span class="dt">x=</span>diet, <span class="dt">y=</span>coag, <span class="dt">color=</span>SigGroup)) +
-<span class="st">  </span><span class="kw">geom_boxplot</span>() +
-<span class="st">  </span><span class="kw">geom_text</span>( <span class="kw">aes</span>(<span class="dt">label=</span>SigGroup), <span class="dt">y=</span><span class="fl">71.5</span>)</code></pre></div>
-<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-142-1.png" width="672" /></p>
-</div>
-</div>
-<div id="exercises-7" class="section level2">
-<h2><span class="header-section-number">8.5</span> Exercises</h2>
-<ol style="list-style-type: decimal">
-<li>Use the dataset <code>chickwts</code> in the <code>faraway</code> package. This was an experiment to determine which feed types result in the largest chickens. A set of 71 chicks were all randomly assigned one of six feed types and their weight in grams after six weeks was recorded. Determine whether there are differences in the weights of chickens according to their feed. Perform all necessary model diagnostics and examine the contrasts between each pair of feed levels. Summarize these results.</li>
-</ol>
+##     collapse</code></pre>
+<pre><code>## This is mgcv 1.8-12. For overview type &#39;help(&quot;mgcv-package&quot;)&#39;.</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># I am cheating a bit because I&#39;m using a different </span>
+<span class="co"># set of basis functions.  See STA 578 for more info...</span>
+model &lt;-<span class="st"> </span><span class="kw">gam</span>(value ~<span class="st"> </span><span class="kw">s</span>(year) +<span class="st"> </span><span class="kw">s</span>(month, <span class="dt">bs=</span><span class="st">&#39;cc&#39;</span>), <span class="dt">data=</span>CO2)
+
+CO2 &lt;-<span class="st"> </span>CO2 %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>( <span class="dt">fit =</span> <span class="kw">predict</span>(model) )
+
+<span class="kw">ggplot</span>(CO2, <span class="kw">aes</span>(<span class="dt">x=</span>time, <span class="dt">y=</span>value)) +
+<span class="st">  </span><span class="kw">geom_point</span>() +
+<span class="st">  </span><span class="kw">ggtitle</span>(<span class="st">&#39;Mauna Loa Atmospheric CO2&#39;</span>) +
+<span class="st">  </span><span class="kw">geom_line</span>(<span class="kw">aes</span>(<span class="dt">y=</span>fit), <span class="dt">color=</span><span class="st">&#39;red&#39;</span>)</code></pre></div>
+<p><img src="Statistical_Methods_II_files/figure-html/unnamed-chunk-289-1.png" width="672" /></p>
 
 </div>
 </div>
@@ -420,8 +421,8 @@ make_TukeyHSD_letters &lt;-<span class="st"> </span>function(model, variable){
           </div>
         </div>
       </div>
-<a href="7-variable-selection.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
-<a href="9-two-way-anova.html" class="navigation navigation-next " aria-label="Next page""><i class="fa fa-angle-right"></i></a>
+<a href="12-binomial-regression.html" class="navigation navigation-prev navigation-unique" aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+
 
 <script src="libs/gitbook-2.6.7/js/app.min.js"></script>
 <script src="libs/gitbook-2.6.7/js/lunr.js"></script>
@@ -448,7 +449,7 @@ gitbook.start({
 "size": 2
 },
 "edit": {
-"link": "https://github.com/dereksonderegger/STA_571_Book/raw/master/08_OneWayAnova.Rmd",
+"link": "https://github.com/dereksonderegger/STA_571_Book/raw/master/13_IntroToTimeSeries.Rmd",
 "text": null
 },
 "download": null,
