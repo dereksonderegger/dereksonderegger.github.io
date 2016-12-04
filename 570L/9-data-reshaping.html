@@ -25,7 +25,7 @@
 
 <meta name="author" content="Derek L. Sonderegger">
 
-<meta name="date" content="2016-10-25">
+<meta name="date" content="2016-12-04">
 
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
@@ -413,14 +413,15 @@ Lake.Data &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span cla
 <p>This file is in a wide format, where each row represents a month and the columns X1, X2, …, X31 represent the day of the month the observation was made.</p>
 <ol style="list-style-type: lower-alpha">
 <li><p>Convert data set to the long format where the data has only four columns: <code>Year</code>, <code>Month</code>, <code>Day</code>, <code>Tmax</code>.</p></li>
-<li><p>Calculate the average monthly maximum temperature for each Month in the dataset (So there will be 360 mean maximum temperatures).</p></li>
-<li><p>Convert the average month maximums back to a wide data format where each line represents a year and there are 12 columns of temperature data (one for each month) along with a column for the year.</p></li>
+<li><p>Calculate the average monthly maximum temperature for each Month in the dataset (So there will be 365 mean maximum temperatures). <em>You’ll probably have some issues taking the mean because there are a number of values that are missing and by default R refuses to take means and sums when there is missing data. The argument <code>na.rm=TRUE</code> to <code>mean()</code> allows you to force R to remove the missing observations before calculating the mean.</em></p></li>
+<li><p>Convert the average month maximums back to a wide data format where each line represents a year and there are 12 columns of temperature data (one for each month) along with a column for the year. <em>There will be a couple of months that still have missing data because the weather station was out of commision for those months and there was NO data for the entire month.</em></p></li>
 </ol></li>
 <li>A common task is to take a set of data that has multiple categorical variables and create a table of the number of cases for each combination. An introductory statistics textbook contains a dataset summarizing student surveys from several sections of an intro class. The two variables of interest for us are <code>Gender</code> and <code>Year</code> which are the students gender and year in college.
 <ol style="list-style-type: lower-alpha">
-<li><p>Download the dataset using the following:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Survey &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&#39;http://www.lock5stat.com/datasets/StudentSurvey.csv&#39;</span>)</code></pre></div></li>
-<li>Using some combination of <code>dplyr</code> functions, produce a data set with eight rows that contains the number of responses for each gender:year combination.</li>
+<li><p>Download the dataset and correctly order the <code>Year</code> variable using the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">Survey &lt;-<span class="st"> </span><span class="kw">read.csv</span>(<span class="st">&#39;http://www.lock5stat.com/datasets/StudentSurvey.csv&#39;</span>, <span class="dt">na.strings=</span><span class="kw">c</span>(<span class="st">&#39;&#39;</span>,<span class="st">&#39; &#39;</span>)) %&gt;%
+<span class="st">   </span><span class="kw">mutate</span>(<span class="dt">Year =</span> <span class="kw">factor</span>(Year, <span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&#39;FirstYear&#39;</span>,<span class="st">&#39;Sophomore&#39;</span>,<span class="st">&#39;Junior&#39;</span>,<span class="st">&#39;Senior&#39;</span>)))</code></pre></div></li>
+<li>Using some combination of <code>dplyr</code> functions, produce a data set with eight rows that contains the number of responses for each gender:year combination. <em>Notice there are two females that neglected to give their Year and you should remove them first. The function <code>is.na(Year)</code> will return logical values indicating if the Year value was missing and you can flip those values using the negation operator <code>!</code>. So you might consider using <code>!is.na(Year)</code> as the argument to a filter() command. Alternatively you sort on Year and remove the first two rows using <code>slice(-2:-1)</code>. Next you’ll want to summarize each Year/Gender group using the <code>n()</code> function which gives the number of rows in a data set.</em></li>
 <li><p>Using <code>tidyr</code> commands, produce a table of the number of responses in the following form:</p>
 <table>
 <thead>
@@ -450,7 +451,7 @@ Lake.Data &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span cla
 </tbody>
 </table></li>
 </ol></li>
-<li><p>The package <code>nycflights</code> contains information about all the flights that arrived in or left from New York City in 2013. This package contains five data tables, but there are three data tables we will work with. The data table <code>flights</code> gives information about a particular flight, <code>airports</code> gives information about a particular airport, and <code>airlines</code> gives information about each airline. Create a table of all the flights on February 14th by Virgin America that has columns for the carrier, origin, destination, departure time, and flight duration. For the origin and destination, display the airport name, <strong>not the airport code</strong>. Notice that because the column for the airport code doesn’t match up between <code>flights</code> and <code>airports</code>, you’ll have to use the <code>by=</code> argument.</p></li>
+<li><p>The package <code>nycflights</code> contains information about all the flights that arrived in or left from New York City in 2013. This package contains five data tables, but there are three data tables we will work with. The data table <code>flights</code> gives information about a particular flight, <code>airports</code> gives information about a particular airport, and <code>airlines</code> gives information about each airline. Create a table of all the flights on February 14th by Virgin America that has columns for the carrier, destination, departure time, and flight duration. Join this table with the airports information for the destination. Notice that because the column for the destination airport code doesn’t match up between <code>flights</code> and <code>airports</code>, you’ll have to use the <code>by=c(&quot;TableA.Col&quot;=&quot;TableB.Col&quot;)</code> argument where you insert the correct names for <code>TableA.Col</code> and <code>TableB.Col</code>.</p></li>
 </ol>
 
 </div>
