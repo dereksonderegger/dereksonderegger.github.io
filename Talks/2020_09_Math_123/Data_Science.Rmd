@@ -1,0 +1,85 @@
+---
+title: What is Data Science?
+author: Prof. Derek Sonderegger
+date: Sept 14, 2020
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## Mix of disciplines
+
+```{r, echo=FALSE, out.height=455, out.width=800}
+knitr::include_graphics(path = 'DataScience_SkillSet_v1.pdf')
+```
+
+## What is Data Science?
+
+* Data Science is an umbrella term that encompasses skills and knowledge that are traditionally separated as Statistics and Computer Science.
+* Data Science considers:
+    * Acquiring data: e.g. Web Scraping, experimental design, population/sample misalignment.
+    * Data Wrangling: Manipulating raw data into a usable format.
+    * Data Maintenance: Data base design and storage.
+    * Analysis: Inferential and predictive analyses.
+    * Communication: Data reporting and visualization.
+
+
+
+## Work Flow
+```{r, echo=FALSE, out.height=455, out.width=800}
+knitr::include_graphics(path = 'DataScience_Skillset_v2.pdf')
+```
+
+
+## Data Science is done in Context
+
+* Almost always requires subject domain knowledge:
+    * Microbiology, economics, ecology, actuarial science, finance, transportation, etc.
+    
+* Requires asking the *right question* and answering it with the 
+*right data*.
+
+* Because data science can mix with nearly any field, it doesn't make sense to pair with any one particular subject area.
+ 
+    
+## Lots of jobs:
+
+* Big Tech: Amazon, IBM, Intel, Carvana, ...
+* Targeted Advertising: Albertsons, Safeway, Petsmart, ...
+* Financial Services: USAA, Wells Fargo, American Express, ...
+* Government agencies: State of AZ Healthcare, ...
+* 547 jobs in Arizona on glassdoor.com (8/19/2019)
+
+
+
+## Required Courses - Computer Science (17 credits)
+
+* CS 126 & 126L – Computer Science I & Lab	
+* CS 136 & 136L – Computer Science II & Lab	
+* CS 200 – Introduction to Computer Organization	
+* CS 249 – Data Structures	
+* CS 345 – Principles of Database Systems	
+
+## Required Courses - Statistics (18 credits)
+
+* **STA 141** – Data Visualization	
+* STA 275 – Introduction to Statistical Analysis (with Calc)	
+* STA 371 – Intermediate Statistics
+* **STA 444, 445** - Data Wrangling
+* STA 471 – Regression Analysis	
+* **STA 486** - Senior Capstone (Engineering Style!)
+
+## Other
+* Math Courses
+  * 136 - Calculus I
+  * 226 - Discrete Mathematics
+  * 216 - Matrix Algebra
+* English 305W
+* Electives (9 credits)
+    - Essentially any upper division Math, Statistics, or Computer Science course.
+    
+* We encourage students to also get a minor in any field that is of interest to them.
+
